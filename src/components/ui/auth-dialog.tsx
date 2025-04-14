@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -63,39 +64,59 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
     e.preventDefault()
     setIsLoading(true)
     
-    const formData = new FormData(e.target as HTMLFormElement)
-    const email = `${formData.get('firstName')}.${formData.get('lastName')}@sparkle.ae`.toLowerCase()
-    const password = 'password123' // Default password for instant registration
-    
-    const userData = {
-      email,
-      password,
-      name: `${formData.get('firstName')} ${formData.get('lastName')}`,
-      role: selectedRole
-    }
-
-    const success = await register(userData)
-    
-    if (success) {
-      // Automatically log in after registration
-      const loginSuccess = await login(email, password)
-      if (loginSuccess) {
-        toast({
-          title: "Success",
-          description: `Successfully registered and logged in as ${selectedRole}`,
-        })
-        onOpenChange(false)
-        navigate('/dashboard')
+    try {
+      const formData = new FormData(e.target as HTMLFormElement)
+      const firstName = formData.get('firstName') as string
+      const lastName = formData.get('lastName') as string
+      const email = `${firstName}.${lastName}@sparkle.ae`.toLowerCase()
+      const password = 'password123' // Default password for instant registration
+      
+      console.log("Registration attempt with:", { firstName, lastName, email, role: selectedRole })
+      
+      const userData = {
+        email,
+        password,
+        name: `${firstName} ${lastName}`,
+        role: selectedRole
       }
-    } else {
+
+      const success = await register(userData)
+      
+      if (success) {
+        console.log("Registration successful, attempting login with:", email, password)
+        // Automatically log in after registration
+        const loginSuccess = await login(email, password)
+        if (loginSuccess) {
+          toast({
+            title: "Success",
+            description: `Successfully registered and logged in as ${selectedRole}`,
+          })
+          onOpenChange(false)
+          navigate('/dashboard')
+        } else {
+          toast({
+            title: "Warning",
+            description: "Registration successful but auto-login failed",
+            variant: "destructive",
+          })
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Registration failed",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Registration error:", error)
       toast({
         title: "Error",
-        description: "Registration failed",
+        description: "An unexpected error occurred during registration",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
-    
-    setIsLoading(false)
   }
 
   const roleButtons = [
