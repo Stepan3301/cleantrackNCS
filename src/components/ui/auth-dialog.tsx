@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +15,7 @@ import { useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
+import { Crown, Users, UserRoundCog, UserCheck, UserRound } from "lucide-react"
 
 interface AuthDialogProps {
   open: boolean;
@@ -26,6 +26,7 @@ interface AuthDialogProps {
 export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDialogProps) {
   const [tab, setTab] = useState<"login" | "register">(defaultTab)
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<string>("staff")
   const { login, register } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -70,7 +71,7 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
       email,
       password,
       name: `${formData.get('firstName')} ${formData.get('lastName')}`,
-      role: formData.get('role') || 'staff'
+      role: selectedRole
     }
 
     const success = await register(userData)
@@ -81,7 +82,7 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
       if (loginSuccess) {
         toast({
           title: "Success",
-          description: "Successfully registered and logged in",
+          description: `Successfully registered and logged in as ${selectedRole}`,
         })
         onOpenChange(false)
         navigate('/dashboard')
@@ -96,6 +97,14 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
     
     setIsLoading(false)
   }
+
+  const roleButtons = [
+    { role: 'owner', icon: <Crown className="h-5 w-5" />, title: 'Owner' },
+    { role: 'head_manager', icon: <UserRoundCog className="h-5 w-5" />, title: 'Head Manager' },
+    { role: 'manager', icon: <Users className="h-5 w-5" />, title: 'Manager' },
+    { role: 'supervisor', icon: <UserCheck className="h-5 w-5" />, title: 'Supervisor' },
+    { role: 'staff', icon: <UserRound className="h-5 w-5" />, title: 'Staff' }
+  ]
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,18 +165,21 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
                 <Input id="phone" name="phone" placeholder="+971 XX XXX XXXX" required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <select 
-                  id="role" 
-                  name="role"
-                  defaultValue="staff"
-                  className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="staff">Staff</option>
-                  <option value="supervisor">Supervisor</option>
-                  <option value="manager">Manager</option>
-                  <option value="head_manager">Head Manager</option>
-                </select>
+                <Label>Select Role</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {roleButtons.map((item) => (
+                    <Button
+                      key={item.role}
+                      type="button"
+                      variant={selectedRole === item.role ? "default" : "outline"}
+                      className="flex flex-col items-center gap-1 h-auto py-2"
+                      onClick={() => setSelectedRole(item.role)}
+                    >
+                      {item.icon}
+                      <span className="text-xs">{item.title}</span>
+                    </Button>
+                  ))}
+                </div>
               </div>
               <DialogFooter className="pt-4 px-0">
                 <Button type="submit" className="w-full" disabled={isLoading}>
