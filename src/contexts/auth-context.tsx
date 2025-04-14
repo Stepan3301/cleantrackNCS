@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from "react"
 
 // Define user roles
@@ -60,6 +59,7 @@ const mockUsers = [
 export function AuthContextProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [users, setUsers] = useState(mockUsers)
 
   // Check for existing session on mount
   useEffect(() => {
@@ -79,7 +79,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 800))
       
-      const foundUser = mockUsers.find(
+      const foundUser = users.find(
         u => u.email === email && u.password === password
       )
       
@@ -109,7 +109,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     localStorage.removeItem("isAuthenticated")
   }
 
-  // Register function (would submit for approval in real app)
+  // Register function (actually adds the user to our mock database)
   const register = async (userData: any): Promise<boolean> => {
     setLoading(true)
     
@@ -117,8 +117,28 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      // In a real app, this would create a pending registration
+      // Generate unique ID
+      const id = (users.length + 1).toString()
+      
+      // Create new user object
+      const newUser = {
+        id,
+        name: userData.name,
+        email: userData.email,
+        password: userData.password,
+        role: userData.role as UserRole
+      }
+      
+      // Add to mock users array
+      setUsers(prevUsers => [...prevUsers, newUser])
+      
       console.log("Registration submitted:", userData)
+      
+      // Set the user as logged in
+      const { password: _, ...safeUser } = newUser
+      setUser(safeUser)
+      localStorage.setItem("user", JSON.stringify(safeUser))
+      localStorage.setItem("isAuthenticated", "true")
       
       setLoading(false)
       return true

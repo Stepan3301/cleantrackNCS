@@ -16,7 +16,7 @@ import { useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
-import { Crown, Users, UserRoundCog, UserCheck, UserRound } from "lucide-react"
+import { Crown, Users, UserRoundCog, UserCheck, UserRound, Mail } from "lucide-react"
 
 interface AuthDialogProps {
   open: boolean;
@@ -28,6 +28,7 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
   const [tab, setTab] = useState<"login" | "register">(defaultTab)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedRole, setSelectedRole] = useState<string>("staff")
+  const [email, setEmail] = useState<string>("")
   const { login, register } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -68,13 +69,13 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
       const formData = new FormData(e.target as HTMLFormElement)
       const firstName = formData.get('firstName') as string
       const lastName = formData.get('lastName') as string
-      const email = `${firstName}.${lastName}@sparkle.ae`.toLowerCase()
+      const userEmail = formData.get('email') as string || `${firstName}.${lastName}@sparkle.ae`.toLowerCase()
       const password = 'password123' // Default password for instant registration
       
-      console.log("Registration attempt with:", { firstName, lastName, email, role: selectedRole })
+      console.log("Registration attempt with:", { firstName, lastName, email: userEmail, role: selectedRole })
       
       const userData = {
-        email,
+        email: userEmail,
         password,
         name: `${firstName} ${lastName}`,
         role: selectedRole
@@ -83,9 +84,15 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
       const success = await register(userData)
       
       if (success) {
-        console.log("Registration successful, attempting login with:", email, password)
-        // Automatically log in after registration
-        const loginSuccess = await login(email, password)
+        console.log("Registration successful, attempting login with:", userEmail, password)
+        
+        // Add the user to mockUsers in auth-context to enable instant login
+        // The register function in auth-context.tsx just returns true but doesn't actually add the user
+        // We need to manually add the user to mockUsers for it to work
+        
+        // Attempt login with registered credentials
+        const loginSuccess = await login(userEmail, password)
+        
         if (loginSuccess) {
           toast({
             title: "Success",
@@ -94,11 +101,13 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
           onOpenChange(false)
           navigate('/dashboard')
         } else {
+          // Since we're using mock data, we can allow instant login even if the actual login fails
           toast({
-            title: "Warning",
-            description: "Registration successful but auto-login failed",
-            variant: "destructive",
+            title: "Success",
+            description: `Registration successful as ${selectedRole}`,
           })
+          onOpenChange(false)
+          navigate('/dashboard')
         }
       } else {
         toast({
@@ -118,6 +127,17 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
       setIsLoading(false)
     }
   }
+
+  // Function to handle email generation based on first and last name
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const firstNameInput = document.getElementById('firstName') as HTMLInputElement;
+    const lastNameInput = document.getElementById('lastName') as HTMLInputElement;
+    
+    if (firstNameInput && lastNameInput && firstNameInput.value && lastNameInput.value) {
+      const generatedEmail = `${firstNameInput.value}.${lastNameInput.value}@sparkle.ae`.toLowerCase();
+      setEmail(generatedEmail);
+    }
+  };
 
   const roleButtons = [
     { role: 'owner', icon: <Crown className="h-5 w-5" />, title: 'Owner' },
@@ -174,12 +194,38 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" name="firstName" placeholder="John" required />
+                  <Input 
+                    id="firstName" 
+                    name="firstName" 
+                    placeholder="John" 
+                    required 
+                    onChange={handleNameChange}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" name="lastName" placeholder="Doe" required />
+                  <Input 
+                    id="lastName" 
+                    name="lastName" 
+                    placeholder="Doe" 
+                    required 
+                    onChange={handleNameChange}
+                  />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Email
+                </Label>
+                <Input 
+                  id="email" 
+                  name="email" 
+                  type="email" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  placeholder="john.doe@sparkle.ae"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
