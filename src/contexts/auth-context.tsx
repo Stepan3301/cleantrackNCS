@@ -1,15 +1,15 @@
-
 import React, { createContext, useState, useContext, useEffect } from "react"
 
 // Define user roles
 export type UserRole = "owner" | "head_manager" | "manager" | "supervisor" | "staff"
 
-// User interface
+// User interface with more explicit optional fields to handle all combinations
 export interface User {
   id: string
   name: string
   email: string
   role: UserRole
+  password?: string
   supervisorId?: string  // ID of the supervisor (for staff)
   managerId?: string     // ID of the manager (for supervisors)
 }
@@ -21,7 +21,7 @@ interface AuthContextType {
   logout: () => void
   register: (userData: any) => Promise<boolean>
   loading: boolean
-  users: any[]  // Expose users to check hierarchy
+  users: User[]  // Updated type
   assignSupervisor: (userId: string, supervisorId: string) => void
   assignManager: (supervisorId: string, managerId: string) => void
   deactivateUser: (userId: string) => void
@@ -34,7 +34,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 // Sample user data for demo
-const mockUsers = [
+const mockUsers: User[] = [
   { 
     id: "1", 
     name: "Admin User", 
@@ -71,7 +71,7 @@ const mockUsers = [
 export function AuthContextProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [users, setUsers] = useState(mockUsers)
+  const [users, setUsers] = useState<User[]>(mockUsers)
 
   // Check for existing session on mount
   useEffect(() => {
@@ -161,12 +161,22 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     }
   }
 
-  // Assign supervisor to staff member
+  // Assign supervisor to staff member - FIXED to handle TypeScript properly
   const assignSupervisor = (userId: string, supervisorId: string) => {
     setUsers(prevUsers => 
-      prevUsers.map(user => 
-        user.id === userId ? { ...user, supervisorId } : user
-      )
+      prevUsers.map(user => {
+        if (user.id === userId) {
+          // Create a new user object with the supervisorId
+          const updatedUser = { ...user };
+          updatedUser.supervisorId = supervisorId;
+          // If user has managerId, make sure to keep it undefined if it was undefined
+          if (!('managerId' in user)) {
+            updatedUser.managerId = undefined;
+          }
+          return updatedUser;
+        }
+        return user;
+      })
     )
     
     // Update current user if it's the one being modified
@@ -176,12 +186,22 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     }
   }
 
-  // Assign manager to supervisor
+  // Assign manager to supervisor - FIXED to handle TypeScript properly
   const assignManager = (supervisorId: string, managerId: string) => {
     setUsers(prevUsers => 
-      prevUsers.map(user => 
-        user.id === supervisorId ? { ...user, managerId } : user
-      )
+      prevUsers.map(user => {
+        if (user.id === supervisorId) {
+          // Create a new user object with the managerId
+          const updatedUser = { ...user };
+          updatedUser.managerId = managerId;
+          // If user has supervisorId, make sure to keep it undefined if it was undefined
+          if (!('supervisorId' in user)) {
+            updatedUser.supervisorId = undefined;
+          }
+          return updatedUser;
+        }
+        return user;
+      })
     )
     
     // Update current user if it's the one being modified
