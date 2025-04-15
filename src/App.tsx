@@ -9,6 +9,7 @@ import { AuthContextProvider } from "@/contexts/auth-context";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Hours from "./pages/Hours";
+import Tasks from "./pages/Tasks";
 import Employees from "./pages/Employees";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
@@ -29,6 +30,7 @@ const App = () => (
             <Route element={<AppShell><Dashboard /></AppShell>} path="/dashboard" />
             <Route element={<AppShell><Hours /></AppShell>} path="/hours" />
             <Route element={<AppShell><Employees /></AppShell>} path="/employees" />
+            <Route element={<AppShell><Tasks /></AppShell>} path="/tasks" />
             <Route element={<AppShell><Analytics /></AppShell>} path="/analytics" />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

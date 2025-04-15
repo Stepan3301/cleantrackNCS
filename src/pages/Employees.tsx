@@ -3,6 +3,15 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog"
+import { useAuth } from "@/contexts/auth-context"
+import { 
   Search, 
   Filter, 
   UserPlus, 
@@ -11,114 +20,37 @@ import {
   Phone,
   Mail,
   Calendar,
-  Clock
+  Clock,
+  AlertTriangle
 } from "lucide-react"
 
-// Sample employee data
-const employees = [
-  { 
-    id: 1, 
-    name: "Ahmed Mahmoud", 
-    role: "supervisor", 
-    email: "ahmed@sparkle.ae", 
-    phone: "+971 50 123 4567", 
-    joinDate: "2021-06-15",
-    target: 160,
-    current: 142,
-    photo: "https://i.pravatar.cc/300?img=1"
-  },
-  { 
-    id: 2, 
-    name: "Fatima Al Zahra", 
-    role: "staff", 
-    email: "fatima@sparkle.ae", 
-    phone: "+971 50 987 6543", 
-    joinDate: "2022-01-10",
-    target: 140,
-    current: 125,
-    photo: "https://i.pravatar.cc/300?img=5"
-  },
-  { 
-    id: 3, 
-    name: "Mohammed Ali", 
-    role: "supervisor", 
-    email: "mohammed@sparkle.ae", 
-    phone: "+971 54 456 7890", 
-    joinDate: "2020-11-22",
-    target: 160,
-    current: 160,
-    photo: "https://i.pravatar.cc/300?img=3"
-  },
-  { 
-    id: 4, 
-    name: "Sarah Khan", 
-    role: "staff", 
-    email: "sarah@sparkle.ae", 
-    phone: "+971 52 345 6789", 
-    joinDate: "2022-08-05",
-    target: 140,
-    current: 115,
-    photo: "https://i.pravatar.cc/300?img=10"
-  },
-  { 
-    id: 5, 
-    name: "Omar Hussein", 
-    role: "staff", 
-    email: "omar@sparkle.ae", 
-    phone: "+971 55 678 9012", 
-    joinDate: "2023-01-15",
-    target: 140,
-    current: 132,
-    photo: "https://i.pravatar.cc/300?img=7"
-  },
-  { 
-    id: 6, 
-    name: "Layla Nasser", 
-    role: "staff", 
-    email: "layla@sparkle.ae", 
-    phone: "+971 56 789 0123", 
-    joinDate: "2022-11-03",
-    target: 140,
-    current: 140,
-    photo: "https://i.pravatar.cc/300?img=9"
-  },
-  { 
-    id: 7, 
-    name: "Khaled Rahman", 
-    role: "manager", 
-    email: "khaled@sparkle.ae", 
-    phone: "+971 58 234 5678", 
-    joinDate: "2020-03-02",
-    target: 160,
-    current: 160,
-    photo: "https://i.pravatar.cc/300?img=12"
-  },
-  { 
-    id: 8, 
-    name: "Aisha Abdullah", 
-    role: "staff", 
-    email: "aisha@sparkle.ae", 
-    phone: "+971 50 876 5432", 
-    joinDate: "2022-05-17",
-    target: 140,
-    current: 122,
-    photo: "https://i.pravatar.cc/300?img=23"
-  }
-]
-
 const Employees = () => {
+  const { user, users, canUserManage, deactivateUser } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null)
+  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
+  const [showAssignDialog, setShowAssignDialog] = useState(false)
   
-  // Filter employees based on search query and selected role
-  const filteredEmployees = employees.filter(employee => {
-    const matchesSearch = employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         employee.email.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesRole = !selectedRole || employee.role === selectedRole
-    
-    return matchesSearch && matchesRole
-  })
+  const isOwnerOrHeadManager = user?.role === "owner" || user?.role === "head_manager"
+  
+  // Filter visible employees based on user role hierarchy
+  const visibleEmployees = users
+    .filter(employee => {
+      // Filter out the current user (don't show themselves in the list)
+      if (employee.id === user?.id) return false
+      
+      // Apply role-based visibility filtering
+      return canUserManage(user, employee.id)
+    })
+    .filter(employee => {
+      // Apply search and role filters
+      const matchesSearch = employee.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           employee.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesRole = !selectedRole || employee.role === selectedRole
+      
+      return matchesSearch && matchesRole
+    })
   
   // Calculate progress percentage for employee
   const calculateProgress = (current: number, target: number) => {
@@ -138,15 +70,26 @@ const Employees = () => {
     return (today.getFullYear() - joinDate.getFullYear()) * 12 + 
            (today.getMonth() - joinDate.getMonth())
   }
+  
+  // Handle deactivation confirmation
+  const handleDeactivateConfirm = () => {
+    if (selectedEmployee) {
+      deactivateUser(selectedEmployee.id)
+      setShowDeactivateDialog(false)
+      setSelectedEmployee(null)
+    }
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Employee Database</h1>
-        <Button>
-          <UserPlus size={16} className="mr-2" />
-          Add New Employee
-        </Button>
+        {isOwnerOrHeadManager && (
+          <Button>
+            <UserPlus size={16} className="mr-2" />
+            Add New Employee
+          </Button>
+        )}
       </div>
       
       {/* Filters */}
@@ -197,7 +140,7 @@ const Employees = () => {
       
       {/* Employee Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredEmployees.map((employee) => (
+        {visibleEmployees.map((employee) => (
           <div 
             key={employee.id} 
             className="bg-white rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
@@ -205,7 +148,7 @@ const Employees = () => {
           >
             <div className="aspect-[4/3] relative bg-secondary/30">
               <img 
-                src={employee.photo} 
+                src={employee.photo || `https://i.pravatar.cc/300?img=${employee.id}`} 
                 alt={employee.name}
                 className="w-full h-full object-cover"
               />
@@ -232,32 +175,35 @@ const Employees = () => {
             </div>
             
             <div className="p-4">
+              {/* Only show hours progress for staff members */}
+              {employee.role === "staff" && (
+                <div className="mb-3">
+                  <div className="text-sm text-muted-foreground mb-1">Working Hours</div>
+                  <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full ${
+                        calculateProgress(employee.current || 0, employee.target || 100) >= 100 
+                          ? "bg-success" 
+                          : "bg-primary"
+                      }`}
+                      style={{ width: `${calculateProgress(employee.current || 0, employee.target || 100)}%` }}
+                    ></div>
+                  </div>
+                  <div className="flex justify-between text-xs mt-1">
+                    <span>{employee.current || 0} hours</span>
+                    <span className="text-muted-foreground">{employee.target || 100} target</span>
+                  </div>
+                </div>
+              )}
+              
               <div className="flex items-center justify-between mb-3">
                 <div className="text-xs text-muted-foreground flex items-center">
                   <Calendar size={12} className="mr-1" />
-                  <span>Joined {formatDate(employee.joinDate)}</span>
+                  <span>Joined {formatDate(employee.joinDate || new Date().toISOString())}</span>
                 </div>
                 <Button variant="ghost" size="icon" className="h-6 w-6">
                   <MoreHorizontal size={14} />
                 </Button>
-              </div>
-              
-              <div className="mb-3">
-                <div className="text-sm text-muted-foreground mb-1">Working Hours</div>
-                <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${
-                      calculateProgress(employee.current, employee.target) >= 100 
-                        ? "bg-success" 
-                        : "bg-primary"
-                    }`}
-                    style={{ width: `${calculateProgress(employee.current, employee.target)}%` }}
-                  ></div>
-                </div>
-                <div className="flex justify-between text-xs mt-1">
-                  <span>{employee.current} hours</span>
-                  <span className="text-muted-foreground">{employee.target} target</span>
-                </div>
               </div>
               
               <div className="text-xs text-muted-foreground truncate">
@@ -269,7 +215,7 @@ const Employees = () => {
       </div>
       
       {/* Empty state */}
-      {filteredEmployees.length === 0 && (
+      {visibleEmployees.length === 0 && (
         <div className="bg-white rounded-lg border border-border p-8 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary/50 flex items-center justify-center">
             <Search size={24} className="text-muted-foreground" />
@@ -294,7 +240,7 @@ const Employees = () => {
               </button>
               <div className="absolute -bottom-16 left-6 w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-secondary">
                 <img 
-                  src={selectedEmployee.photo} 
+                  src={selectedEmployee.photo || `https://i.pravatar.cc/300?img=${selectedEmployee.id}`}
                   alt={selectedEmployee.name}
                   className="w-full h-full object-cover"
                 />
@@ -317,14 +263,33 @@ const Employees = () => {
                     </span>
                     <span className="mx-2 text-muted-foreground">•</span>
                     <span className="text-sm text-muted-foreground">
-                      {getMonthsSinceJoin(selectedEmployee.joinDate)} months at company
+                      {getMonthsSinceJoin(selectedEmployee.joinDate || new Date().toISOString())} months at company
                     </span>
                   </div>
                 </div>
                 
                 <div className="space-x-2">
-                  <Button variant="outline" size="sm">Edit</Button>
-                  <Button variant="destructive" size="sm">Deactivate</Button>
+                  {/* "Assign" button - for supervisors and managers */}
+                  {isOwnerOrHeadManager && (
+                    selectedEmployee.role === "staff" || selectedEmployee.role === "supervisor") && (
+                    <Button variant="outline" size="sm" onClick={() => setShowAssignDialog(true)}>
+                      Assign {selectedEmployee.role === "staff" ? "Supervisor" : "Manager"}
+                    </Button>
+                  )}
+                  
+                  {/* Only Owner and Head Manager can see Deactivate button */}
+                  {isOwnerOrHeadManager && (
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDeactivateDialog(true);
+                      }}
+                    >
+                      Deactivate
+                    </Button>
+                  )}
                 </div>
               </div>
               
@@ -338,55 +303,89 @@ const Employees = () => {
                     </div>
                     <div className="flex items-center">
                       <Phone size={16} className="mr-2 text-muted-foreground" />
-                      <span>{selectedEmployee.phone}</span>
+                      <span>{selectedEmployee.phone || "Not provided"}</span>
                     </div>
                     <div className="flex items-center">
                       <Calendar size={16} className="mr-2 text-muted-foreground" />
-                      <span>Started on {formatDate(selectedEmployee.joinDate)}</span>
+                      <span>Started on {formatDate(selectedEmployee.joinDate || new Date().toISOString())}</span>
                     </div>
                   </div>
                   
-                  <h3 className="text-lg font-medium mb-4 mt-6">Performance Metrics</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm">Working Hours</span>
-                        <span className="text-sm font-medium">
-                          {selectedEmployee.current}/{selectedEmployee.target} hours
-                        </span>
+                  {/* Only show performance metrics for staff members */}
+                  {selectedEmployee.role === "staff" && (
+                    <>
+                      <h3 className="text-lg font-medium mb-4 mt-6">Performance Metrics</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm">Working Hours</span>
+                            <span className="text-sm font-medium">
+                              {selectedEmployee.current || 0}/{selectedEmployee.target || 100} hours
+                            </span>
+                          </div>
+                          <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${
+                                calculateProgress(selectedEmployee.current || 0, selectedEmployee.target || 100) >= 100 
+                                  ? "bg-success" 
+                                  : "bg-primary"
+                              }`}
+                              style={{ width: `${calculateProgress(selectedEmployee.current || 0, selectedEmployee.target || 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm">Client Satisfaction</span>
+                            <span className="text-sm font-medium">92%</span>
+                          </div>
+                          <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
+                            <div className="h-full bg-success" style={{ width: "92%" }}></div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm">Task Completion</span>
+                            <span className="text-sm font-medium">88%</span>
+                          </div>
+                          <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
+                            <div className="h-full bg-primary" style={{ width: "88%" }}></div>
+                          </div>
+                        </div>
+                        
+                        {/* Bonus section - only for staff members */}
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm">Bonus Earned</span>
+                            <span className="text-sm font-medium">
+                              {selectedEmployee.current > selectedEmployee.target 
+                                ? `AED ${Math.floor((selectedEmployee.current - selectedEmployee.target) * 5)}` 
+                                : "AED 0"}
+                            </span>
+                          </div>
+                          {selectedEmployee.current >= selectedEmployee.target ? (
+                            <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-success" 
+                                style={{ 
+                                  width: `${Math.min(
+                                    ((selectedEmployee.current - selectedEmployee.target) / selectedEmployee.target) * 100, 
+                                    100
+                                  )}%` 
+                                }}
+                              ></div>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-muted-foreground">
+                              Target hours must be reached before bonus accumulates
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${
-                            calculateProgress(selectedEmployee.current, selectedEmployee.target) >= 100 
-                              ? "bg-success" 
-                              : "bg-primary"
-                          }`}
-                          style={{ width: `${calculateProgress(selectedEmployee.current, selectedEmployee.target)}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm">Client Satisfaction</span>
-                        <span className="text-sm font-medium">92%</span>
-                      </div>
-                      <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
-                        <div className="h-full bg-success" style={{ width: "92%" }}></div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm">Task Completion</span>
-                        <span className="text-sm font-medium">88%</span>
-                      </div>
-                      <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
-                        <div className="h-full bg-primary" style={{ width: "88%" }}></div>
-                      </div>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </div>
                 
                 <div>
@@ -440,6 +439,28 @@ const Employees = () => {
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Deactivate Confirmation Dialog */}
+      {showDeactivateDialog && (
+        <Dialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-destructive">
+                <AlertTriangle className="mr-2 h-5 w-5" /> Deactivate Employee
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to deactivate {selectedEmployee?.name}? This action will remove their account from the system.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowDeactivateDialog(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={handleDeactivateConfirm}>
+                Deactivate
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   )

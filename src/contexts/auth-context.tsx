@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from "react"
 
 // Define user roles
@@ -9,6 +10,8 @@ export interface User {
   name: string
   email: string
   role: UserRole
+  supervisorId?: string  // ID of the supervisor (for staff)
+  managerId?: string     // ID of the manager (for supervisors)
 }
 
 // Context interface
@@ -18,6 +21,13 @@ interface AuthContextType {
   logout: () => void
   register: (userData: any) => Promise<boolean>
   loading: boolean
+  users: any[]  // Expose users to check hierarchy
+  assignSupervisor: (userId: string, supervisorId: string) => void
+  assignManager: (supervisorId: string, managerId: string) => void
+  deactivateUser: (userId: string) => void
+  isUserManager: (userId: string) => boolean
+  isUserSupervisor: (userId: string) => boolean
+  canUserManage: (currentUser: User | null, targetUserId: string) => boolean
 }
 
 // Create the context
@@ -44,14 +54,16 @@ const mockUsers = [
     name: "Supervisor", 
     email: "supervisor@sparkle.ae", 
     password: "supervisor123", 
-    role: "supervisor" as UserRole 
+    role: "supervisor" as UserRole,
+    managerId: "7" // Assigned to Khaled Rahman (manager)
   },
   { 
     id: "4", 
     name: "Staff Member", 
     email: "staff@sparkle.ae", 
     password: "staff123", 
-    role: "staff" as UserRole 
+    role: "staff" as UserRole,
+    supervisorId: "3" // Assigned to Supervisor
   }
 ]
 
@@ -149,8 +161,96 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     }
   }
 
+  // Assign supervisor to staff member
+  const assignSupervisor = (userId: string, supervisorId: string) => {
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === userId ? { ...user, supervisorId } : user
+      )
+    )
+    
+    // Update current user if it's the one being modified
+    if (user && user.id === userId) {
+      setUser({ ...user, supervisorId })
+      localStorage.setItem("user", JSON.stringify({ ...user, supervisorId }))
+    }
+  }
+
+  // Assign manager to supervisor
+  const assignManager = (supervisorId: string, managerId: string) => {
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === supervisorId ? { ...user, managerId } : user
+      )
+    )
+    
+    // Update current user if it's the one being modified
+    if (user && user.id === supervisorId) {
+      setUser({ ...user, managerId })
+      localStorage.setItem("user", JSON.stringify({ ...user, managerId }))
+    }
+  }
+
+  // Deactivate user (in a real app, you'd likely set a status flag rather than delete)
+  const deactivateUser = (userId: string) => {
+    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId))
+  }
+  
+  // Helper functions for role checks
+  const isUserManager = (userId: string) => {
+    const foundUser = users.find(u => u.id === userId)
+    return foundUser?.role === "manager"
+  }
+  
+  const isUserSupervisor = (userId: string) => {
+    const foundUser = users.find(u => u.id === userId)
+    return foundUser?.role === "supervisor" 
+  }
+  
+  // Function to check if current user can manage/see target user
+  const canUserManage = (currentUser: User | null, targetUserId: string): boolean => {
+    if (!currentUser) return false
+    
+    // Owner and head manager can see everyone
+    if (currentUser.role === "owner" || currentUser.role === "head_manager") return true
+    
+    const targetUser = users.find(u => u.id === targetUserId)
+    if (!targetUser) return false
+    
+    // Managers can see their supervisors and those supervisors' staff
+    if (currentUser.role === "manager") {
+      if (targetUser.role === "supervisor" && targetUser.managerId === currentUser.id) return true
+      if (targetUser.role === "staff") {
+        const supervisor = users.find(u => u.id === targetUser.supervisorId)
+        return supervisor?.managerId === currentUser.id
+      }
+      return false
+    }
+    
+    // Supervisors can only see their staff
+    if (currentUser.role === "supervisor") {
+      return targetUser.role === "staff" && targetUser.supervisorId === currentUser.id
+    }
+    
+    // Staff can't manage anyone
+    return false
+  }
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, loading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      register, 
+      loading, 
+      users,
+      assignSupervisor,
+      assignManager,
+      deactivateUser,
+      isUserManager,
+      isUserSupervisor,
+      canUserManage
+    }}>
       {children}
     </AuthContext.Provider>
   )
