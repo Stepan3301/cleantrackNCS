@@ -20,7 +20,9 @@ import {
   BarChart3, 
   Settings, 
   LogOut,
-  ClipboardCheck
+  ClipboardCheck,
+  FileText,
+  Megaphone
 } from "lucide-react"
 
 export function AppSidebar() {
@@ -33,6 +35,7 @@ export function AppSidebar() {
   
   // Determine which menu items to show based on user role
   const showOwnerContent = user.role === "owner"
+  const showHeadManagerContent = ["owner", "head_manager"].includes(user.role)
   const showManagerContent = ["owner", "head_manager", "manager"].includes(user.role)
   const showSupervisorContent = ["owner", "head_manager", "manager", "supervisor"].includes(user.role)
 
@@ -64,8 +67,8 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
-              {/* Employee Database - For managers and up */}
-              {showManagerContent && (
+              {/* Employee Database - For supervisors and up */}
+              {showSupervisorContent && (
                 <SidebarMenuItem active={location.pathname === "/employees"}>
                   <SidebarMenuButton
                     onClick={() => navigate("/employees")}
@@ -94,6 +97,30 @@ export function AppSidebar() {
                   >
                     <ClipboardCheck size={18} />
                     <span>Tasks</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              
+              {/* Orders - For head managers and owners */}
+              {showHeadManagerContent && (
+                <SidebarMenuItem active={location.pathname === "/orders"}>
+                  <SidebarMenuButton
+                    onClick={() => navigate("/orders")}
+                  >
+                    <FileText size={18} />
+                    <span>Orders</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              
+              {/* Announcements - For head managers and owners */}
+              {showHeadManagerContent && (
+                <SidebarMenuItem active={location.pathname === "/announcements"}>
+                  <SidebarMenuButton
+                    onClick={() => navigate("/announcements")}
+                  >
+                    <Megaphone size={18} />
+                    <span>Announcements</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}

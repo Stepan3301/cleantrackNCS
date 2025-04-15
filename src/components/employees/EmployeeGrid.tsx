@@ -1,7 +1,10 @@
 
-import { User } from "@/contexts/auth-context"
+import { useState } from "react"
+import { User, useAuth } from "@/contexts/auth-context"
 import { EmployeeCard } from "./EmployeeCard"
-import { Search } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { UserPlus, Search } from "lucide-react"
+import { AddEmployeeDialog } from "./AddEmployeeDialog"
 
 interface EmployeeGridProps {
   employees: User[]
@@ -9,6 +12,11 @@ interface EmployeeGridProps {
 }
 
 export function EmployeeGrid({ employees, onSelectEmployee }: EmployeeGridProps) {
+  const { user } = useAuth()
+  const [showAddDialog, setShowAddDialog] = useState(false)
+  
+  const isOwnerOrHeadManager = user?.role === "owner" || user?.role === "head_manager"
+  
   if (employees.length === 0) {
     return (
       <div className="bg-white rounded-lg border border-border p-8 text-center">
@@ -19,19 +27,51 @@ export function EmployeeGrid({ employees, onSelectEmployee }: EmployeeGridProps)
         <p className="text-muted-foreground">
           Try adjusting your search or filter to find what you're looking for.
         </p>
+        
+        {isOwnerOrHeadManager && (
+          <Button 
+            className="mt-4"
+            onClick={() => setShowAddDialog(true)}
+          >
+            <UserPlus size={16} className="mr-2" />
+            Add New Employee
+          </Button>
+        )}
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {employees.map((employee) => (
-        <EmployeeCard
-          key={employee.id}
-          employee={employee}
-          onClick={() => onSelectEmployee(employee)}
+    <>
+      <div className="flex justify-between items-center mb-6">
+        <div className="text-sm text-muted-foreground">
+          {employees.length} employee{employees.length !== 1 ? 's' : ''} found
+        </div>
+        
+        {isOwnerOrHeadManager && (
+          <Button onClick={() => setShowAddDialog(true)}>
+            <UserPlus size={16} className="mr-2" />
+            Add New Employee
+          </Button>
+        )}
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {employees.map((employee) => (
+          <EmployeeCard
+            key={employee.id}
+            employee={employee}
+            onClick={() => onSelectEmployee(employee)}
+          />
+        ))}
+      </div>
+      
+      {showAddDialog && (
+        <AddEmployeeDialog
+          isOpen={showAddDialog}
+          onClose={() => setShowAddDialog(false)}
         />
-      ))}
-    </div>
+      )}
+    </>
   )
 }
