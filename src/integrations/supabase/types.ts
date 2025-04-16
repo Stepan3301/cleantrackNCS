@@ -308,6 +308,54 @@ export type Database = {
           },
         ]
       }
+      users_profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          manager_id: string | null
+          name: string
+          role: Database["public"]["Enums"]["app_role"]
+          supervisor_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id: string
+          manager_id?: string | null
+          name: string
+          role?: Database["public"]["Enums"]["app_role"]
+          supervisor_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          manager_id?: string | null
+          name?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          supervisor_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_profiles_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "users_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "users_profiles_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "users_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_summaries: {
         Row: {
           bonus_eligible: boolean | null
@@ -384,6 +432,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "owner" | "head_manager" | "manager" | "supervisor" | "staff"
       employee_role:
         | "owner"
         | "head_manager"
@@ -505,6 +554,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["owner", "head_manager", "manager", "supervisor", "staff"],
       employee_role: [
         "owner",
         "head_manager",
