@@ -38,7 +38,7 @@ export function SidebarNavigation() {
         items.push(...navigationItems.supervisor)
         break
       default:
-        // No additional items for basic staff/cleaner role
+        // No additional items for basic cleaner role
         break
     }
 

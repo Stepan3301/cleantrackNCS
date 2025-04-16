@@ -48,7 +48,7 @@ export function StaffDashboard() {
             .eq('month', firstDayOfMonth.toISOString().split('T')[0])
             .maybeSingle();
             
-          // Get role threshold hours
+          // Get role threshold hours - use the actual role value
           const { data: thresholdData } = await supabase
             .from('bonus_thresholds')
             .select('monthly_hours, monthly_bonus_amount')

@@ -18,7 +18,7 @@ export const navigationItems = {
       icon: LayoutDashboard
     }
   ],
-  // Staff level items (available to all roles)
+  // Cleaner level items (available to all roles)
   staff: [
     {
       title: "Hours",

@@ -1,10 +1,9 @@
-
 import React, { createContext, useState, useContext, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { User as AuthUser } from "@supabase/supabase-js"
 
-// Define user roles
-export type UserRole = "owner" | "head_manager" | "manager" | "supervisor" | "staff"
+// Update UserRole type to match database expectations
+export type UserRole = "owner" | "head_manager" | "manager" | "supervisor" | "cleaner"
 
 // User interface with more explicit optional fields to handle all combinations
 export interface User {
