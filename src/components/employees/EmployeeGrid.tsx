@@ -17,6 +17,10 @@ export function EmployeeGrid({ employees, onSelectEmployee }: EmployeeGridProps)
   
   const isOwnerOrHeadManager = user?.role === "owner" || user?.role === "head_manager"
   
+  const handleAddEmployee = () => {
+    setShowAddDialog(true)
+  }
+  
   if (employees.length === 0) {
     return (
       <div className="bg-white rounded-lg border border-border p-8 text-center">
@@ -31,7 +35,7 @@ export function EmployeeGrid({ employees, onSelectEmployee }: EmployeeGridProps)
         {isOwnerOrHeadManager && (
           <Button 
             className="mt-4"
-            onClick={() => setShowAddDialog(true)}
+            onClick={handleAddEmployee}
           >
             <UserPlus size={16} className="mr-2" />
             Add New Employee
@@ -49,7 +53,7 @@ export function EmployeeGrid({ employees, onSelectEmployee }: EmployeeGridProps)
         </div>
         
         {isOwnerOrHeadManager && (
-          <Button onClick={() => setShowAddDialog(true)}>
+          <Button onClick={handleAddEmployee}>
             <UserPlus size={16} className="mr-2" />
             Add New Employee
           </Button>

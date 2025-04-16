@@ -9,12 +9,12 @@ import { AuthContextProvider } from "@/contexts/auth-context";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Hours from "./pages/Hours";
-import Tasks from "./pages/Tasks";
 import Employees from "./pages/Employees";
 import Analytics from "./pages/Analytics";
 import Orders from "./pages/Orders";
 import Announcements from "./pages/Announcements";
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -32,10 +32,10 @@ const App = () => (
             <Route element={<AppShell><Dashboard /></AppShell>} path="/dashboard" />
             <Route element={<AppShell><Hours /></AppShell>} path="/hours" />
             <Route element={<AppShell><Employees /></AppShell>} path="/employees" />
-            <Route element={<AppShell><Tasks /></AppShell>} path="/tasks" />
             <Route element={<AppShell><Analytics /></AppShell>} path="/analytics" />
             <Route element={<AppShell><Orders /></AppShell>} path="/orders" />
             <Route element={<AppShell><Announcements /></AppShell>} path="/announcements" />
+            <Route element={<AppShell><Settings /></AppShell>} path="/settings" />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

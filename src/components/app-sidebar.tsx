@@ -20,7 +20,6 @@ import {
   BarChart3, 
   Settings, 
   LogOut,
-  ClipboardCheck,
   FileText,
   Megaphone
 } from "lucide-react"
@@ -89,18 +88,6 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
-              {/* Tasks - For supervisors and up */}
-              {showSupervisorContent && (
-                <SidebarMenuItem active={location.pathname === "/tasks"}>
-                  <SidebarMenuButton
-                    onClick={() => navigate("/tasks")}
-                  >
-                    <ClipboardCheck size={18} />
-                    <span>Tasks</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-              
               {/* Orders - For head managers and owners */}
               {showHeadManagerContent && (
                 <SidebarMenuItem active={location.pathname === "/orders"}>
@@ -136,25 +123,16 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        
-        <SidebarGroup>
-          <SidebarGroupLabel>Settings</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {/* Settings - For owner only */}
-              {showOwnerContent && (
-                <SidebarMenuItem active={location.pathname === "/settings"}>
-                  <SidebarMenuButton
-                    onClick={() => navigate("/settings")}
-                  >
-                    <Settings size={18} />
-                    <span>Settings</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
+              
+              {/* Settings - For all users */}
+              <SidebarMenuItem active={location.pathname === "/settings"}>
+                <SidebarMenuButton
+                  onClick={() => navigate("/settings")}
+                >
+                  <Settings size={18} />
+                  <span>Settings</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               
               {/* Logout - For all users */}
               <SidebarMenuItem>
