@@ -17,18 +17,29 @@ export function SidebarNavigation() {
   const getMenuItems = () => {
     if (!user) return []
 
-    const items = [...navigationItems.staff]
+    // Start with core items that everyone gets
+    const items = [...navigationItems.core]
 
-    if (["supervisor", "manager", "head_manager", "owner"].includes(user.role)) {
-      items.push(...navigationItems.supervisor)
-    }
+    // Add staff items for all authenticated users
+    items.push(...navigationItems.staff)
 
-    if (["manager", "head_manager", "owner"].includes(user.role)) {
-      items.push(...navigationItems.manager)
-    }
-
-    if (["head_manager", "owner"].includes(user.role)) {
-      items.push(...navigationItems.headManager)
+    // Add role-specific items
+    switch (user.role) {
+      case 'head_manager':
+        items.push(...navigationItems.head_manager)
+        items.push(...navigationItems.manager)
+        items.push(...navigationItems.supervisor)
+        break
+      case 'manager':
+        items.push(...navigationItems.manager)
+        items.push(...navigationItems.supervisor)
+        break
+      case 'supervisor':
+        items.push(...navigationItems.supervisor)
+        break
+      default:
+        // No additional items for basic staff/cleaner role
+        break
     }
 
     return items
@@ -40,9 +51,7 @@ export function SidebarNavigation() {
     <SidebarMenu>
       {menuItems.map((item) => (
         <SidebarMenuItem key={item.title} active={location.pathname === item.path}>
-          <SidebarMenuButton
-            onClick={() => navigate(item.path)}
-          >
+          <SidebarMenuButton onClick={() => navigate(item.path)}>
             <item.icon size={18} />
             <span>{item.title}</span>
           </SidebarMenuButton>

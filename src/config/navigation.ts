@@ -10,12 +10,16 @@ import {
 } from "lucide-react"
 
 export const navigationItems = {
-  staff: [
+  // Core items available to all authenticated users
+  core: [
     {
       title: "Dashboard",
       path: "/dashboard",
       icon: LayoutDashboard
-    },
+    }
+  ],
+  // Staff level items (available to all roles)
+  staff: [
     {
       title: "Hours",
       path: "/hours",
@@ -27,6 +31,7 @@ export const navigationItems = {
       icon: Settings
     }
   ],
+  // Role-specific items
   supervisor: [
     {
       title: "Employees",
@@ -41,7 +46,7 @@ export const navigationItems = {
       icon: BarChart3
     }
   ],
-  headManager: [
+  head_manager: [
     {
       title: "Orders",
       path: "/orders",
