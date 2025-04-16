@@ -18,3 +18,14 @@ export interface HoursData {
   supervisorHours: HoursRecord;
   notifications: HoursNotification[];
 }
+
+export interface EmployeeHoursRecord {
+  hours: number;
+  date: string;
+}
+
+export interface EmployeeHoursData {
+  records: EmployeeHoursRecord[];
+  totalHours: number;
+  targetHours: number;
+}

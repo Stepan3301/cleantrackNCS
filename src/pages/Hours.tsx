@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -11,9 +10,10 @@ import { HoursEntryForm } from "@/components/hours/HoursEntryForm";
 import { StaffDashboard } from "@/components/hours/StaffDashboard";
 import { HoursTable } from "@/components/hours/HoursTable";
 import { HoursData } from "@/types/hours";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-// Sample hours data
-const mockHoursData: HoursData = {
+// Exporting mockHoursData so it can be used by HoursView
+export const mockHoursData: HoursData = {
   staffHours: {
     "4": { 1: 8, 2: 7.5, 5: 8, 8: 8, 15: 6 },
     "5": { 1: 7, 3: 8, 9: 6, 10: 4 },
@@ -33,6 +33,7 @@ const mockHoursData: HoursData = {
 const Hours = () => {
   const { user, users } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [hoursWorked, setHoursWorked] = useState(0);
@@ -82,7 +83,7 @@ const Hours = () => {
     return staffHours === supervisorHours ? "bg-green-100 border-green-400" : "bg-red-100 border-red-400";
   };
 
-  // Handle hour submission
+  // Handle hour submission with immediate UI update
   const handleHourSubmission = () => {
     if (hoursWorked < 0 || hoursWorked > 24) {
       toast({
@@ -91,6 +92,21 @@ const Hours = () => {
         variant: "destructive"
       });
       return;
+    }
+
+    // Update the hours data
+    if (user && selectedDay) {
+      if (isStaff) {
+        mockHoursData.staffHours[user.id] = {
+          ...mockHoursData.staffHours[user.id],
+          [selectedDay]: hoursWorked
+        };
+      } else if (isSupervisor) {
+        mockHoursData.supervisorHours[user.id] = {
+          ...mockHoursData.supervisorHours[user.id],
+          [selectedDay]: hoursWorked
+        };
+      }
     }
 
     toast({
@@ -102,16 +118,6 @@ const Hours = () => {
     setLocation("");
     setPeopleWorked(1);
     setSelectedDay(null);
-  };
-
-  // Update hours as manager/owner
-  const handleUpdateHours = (staffId: string, day: number, hours: number | null) => {
-    if (hours !== null) {
-      toast({
-        title: "Hours updated",
-        description: `Updated hours to ${hours} for ${users.find(u => u.id === staffId)?.name}`
-      });
-    }
   };
 
   // Render notifications
@@ -159,7 +165,7 @@ const Hours = () => {
       </div>
       
       {isStaff && (
-        <>
+        <div className={isMobile ? "space-y-4" : ""}>
           <HoursCalendar
             currentMonth={currentMonth}
             onMonthChange={setCurrentMonth}
@@ -178,39 +184,33 @@ const Hours = () => {
             setLocation={setLocation}
             peopleWorked={peopleWorked}
             setPeopleWorked={setPeopleWorked}
-            supervisorName={supervisorName}
+            supervisorName={users.find(u => u.id === user?.supervisorId)?.name || "Not Assigned"}
             onSubmit={handleHourSubmission}
             onCancel={() => setSelectedDay(null)}
           />
           {!selectedDay && <StaffDashboard />}
-        </>
+        </div>
       )}
       
       {isSupervisor && (
-        <>
-          <HoursCalendar
-            currentMonth={currentMonth}
-            onMonthChange={setCurrentMonth}
-            selectedDay={selectedDay}
-            onDaySelect={setSelectedDay}
+        <div className={isMobile ? "overflow-x-auto" : ""}>
+          <HoursTable
+            staffList={users.filter(u => u.supervisorId === user?.id)}
+            allDaysInMonth={Array.from(
+              { length: new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate() },
+              (_, i) => i + 1
+            )}
             hoursData={mockHoursData.supervisorHours}
-            isStaff={false}
+            isHeadManagerOrOwner={false}
             isSupervisor={true}
-            supervisedStaff={supervisedStaff}
+            handleUpdateHours={() => {}}
+            calculateTotalHours={(staffId) => {
+              const hours = mockHoursData.supervisorHours[staffId] || {};
+              return Object.values(hours).reduce((sum, h) => sum + Number(h), 0);
+            }}
+            getCellColor={() => ""}
           />
-          <div className="bg-white p-4 rounded-lg border border-border mt-6">
-            <HoursTable
-              staffList={supervisedStaff}
-              allDaysInMonth={allDaysInMonth}
-              hoursData={mockHoursData.supervisorHours}
-              isHeadManagerOrOwner={isHeadManagerOrOwner}
-              isSupervisor={true}
-              handleUpdateHours={handleUpdateHours}
-              calculateTotalHours={calculateTotalHours}
-              getCellColor={getCellColor}
-            />
-          </div>
-        </>
+        </div>
       )}
       
       {(isManager || isHeadManagerOrOwner) && (

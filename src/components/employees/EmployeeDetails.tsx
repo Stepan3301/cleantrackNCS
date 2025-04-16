@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import { User, useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
@@ -10,8 +9,9 @@ import {
   DialogDescription,
   DialogFooter
 } from "@/components/ui/dialog"
-import { Mail, Phone, Calendar, Users } from "lucide-react"
+import { Mail, Phone, Calendar, Users, Clock } from "lucide-react"
 import { AssignmentDialog } from "./AssignmentDialog"
+import { HoursView } from "./HoursView"
 
 interface EmployeeDetailsProps {
   employee: User | null
@@ -28,10 +28,11 @@ export function EmployeeDetails({
   onDeactivate,
   showDeactivateOption 
 }: EmployeeDetailsProps) {
-  const { user } = useAuth();
+  const { user, users } = useAuth();
   const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [showHoursView, setShowHoursView] = useState(false);
   
-  if (!employee) return null
+  if (!employee) return null;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -45,18 +46,25 @@ export function EmployeeDetails({
            (today.getMonth() - joinDate.getMonth())
   }
 
-  // Only show assignment button for staff and supervisor roles
-  // and only if current user is owner or head_manager
-  const canAssign = (
+  // Get assigned supervisor/manager
+  const getAssignedTo = () => {
+    if (employee.role === "staff" && employee.supervisorId) {
+      const supervisor = users.find(u => u.id === employee.supervisorId);
+      return supervisor ? `Assigned to Supervisor: ${supervisor.name}` : null;
+    }
+    if (employee.role === "supervisor" && employee.managerId) {
+      const manager = users.find(u => u.id === employee.managerId);
+      return manager ? `Assigned to Manager: ${manager.name}` : null;
+    }
+    return null;
+  }
+
+  const canViewHours = (
     (user?.role === "owner" || user?.role === "head_manager") && 
     (employee.role === "staff" || employee.role === "supervisor")
   );
 
-  const getAssignButtonText = () => {
-    return employee.role === "staff" 
-      ? "Assign to Supervisor" 
-      : "Assign to Manager";
-  }
+  const assignedTo = getAssignedTo();
 
   return (
     <>
@@ -99,7 +107,6 @@ export function EmployeeDetails({
               </div>
             </div>
             
-            {/* Employee details grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
               <div>
                 <h3 className="text-lg font-medium mb-4">Contact Information</h3>
@@ -116,18 +123,24 @@ export function EmployeeDetails({
                     <Calendar size={16} className="mr-2 text-muted-foreground" />
                     <span>Started on {formatDate(new Date().toISOString())}</span>
                   </div>
+                  {assignedTo && (
+                    <div className="flex items-center">
+                      <Users size={16} className="mr-2 text-muted-foreground" />
+                      <span>{assignedTo}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
             
             <div className="flex justify-end gap-2 mt-6">
-              {canAssign && (
+              {canViewHours && (
                 <Button 
                   variant="outline"
-                  onClick={() => setShowAssignDialog(true)}
+                  onClick={() => setShowHoursView(true)}
                 >
-                  <Users size={16} className="mr-2" />
-                  {getAssignButtonText()}
+                  <Clock size={16} className="mr-2" />
+                  Check Records
                 </Button>
               )}
               
@@ -151,6 +164,14 @@ export function EmployeeDetails({
           isOpen={showAssignDialog}
           employee={employee}
           onClose={() => setShowAssignDialog(false)}
+        />
+      )}
+
+      {employee && showHoursView && (
+        <HoursView
+          isOpen={showHoursView}
+          employee={employee}
+          onClose={() => setShowHoursView(false)}
         />
       )}
     </>
