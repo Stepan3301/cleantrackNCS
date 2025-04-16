@@ -1,64 +1,32 @@
-import { useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HoursCalendar } from "@/components/hours/HoursCalendar";
-import { HoursEntryForm } from "@/components/hours/HoursEntryForm";
-import { StaffDashboard } from "@/components/hours/StaffDashboard";
-import { HoursTable } from "@/components/hours/HoursTable";
+import { StaffHoursView } from "@/components/hours/StaffHoursView";
+import { SupervisorHoursView } from "@/components/hours/SupervisorHoursView";
+import { ManagerHoursView } from "@/components/hours/ManagerHoursView";
 import { HoursData } from "@/types/hours";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 // Exporting mockHoursData so it can be used by HoursView
 export const mockHoursData: HoursData = {
-  staffHours: {
-    "4": { 1: 8, 2: 7.5, 5: 8, 8: 8, 15: 6 },
-    "5": { 1: 7, 3: 8, 9: 6, 10: 4 },
-    "8": { 2: 8, 6: 7, 12: 8 }
-  },
-  supervisorHours: {
-    "4": { 1: 8, 2: 7, 5: 8, 8: 8, 15: 6 },
-    "5": { 1: 7, 3: 7.5, 9: 6, 10: 4 },
-    "8": { 2: 7.5, 6: 7, 12: 8 }
-  },
-  notifications: [
-    { day: 2, staffId: "4", supervisorId: "3", staffHours: 7.5, supervisorHours: 7 },
-    { day: 3, staffId: "5", supervisorId: "3", staffHours: 8, supervisorHours: 7.5 }
-  ]
+  staffHours: {},
+  supervisorHours: {},
+  notifications: []
 };
 
 const Hours = () => {
   const { user, users } = useAuth();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [hoursWorked, setHoursWorked] = useState(0);
-  const [location, setLocation] = useState("");
-  const [peopleWorked, setPeopleWorked] = useState(1);
-  const [selectedSupervisor, setSelectedSupervisor] = useState<string | null>(null);
+
+  if (!user) return null;
 
   // Role checks
-  const isStaff = user?.role === "staff";
-  const isSupervisor = user?.role === "supervisor";
-  const isManager = user?.role === "manager";
-  const isHeadManagerOrOwner = user?.role === "head_manager" || user?.role === "owner";
+  const isStaff = user.role === "staff";
+  const isSupervisor = user.role === "supervisor";
+  const isManager = user.role === "manager";
+  const isHeadManagerOrOwner = user.role === "head_manager" || user.role === "owner";
 
-  // Get all days in current month
-  const daysInMonth = new Date(
-    currentMonth.getFullYear(),
-    currentMonth.getMonth() + 1,
-    0
-  ).getDate();
-  
-  const allDaysInMonth = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-  // Get supervised staff members (for supervisors)
-  const supervisedStaff = users.filter(u => u.supervisorId === user?.id && u.role === "staff");
-  
   // Get all supervisors (for head manager/owner view)
   const allSupervisors = users.filter(u => u.role === "supervisor");
 
@@ -83,9 +51,9 @@ const Hours = () => {
     return staffHours === supervisorHours ? "bg-green-100 border-green-400" : "bg-red-100 border-red-400";
   };
 
-  // Handle hour submission with immediate UI update
-  const handleHourSubmission = () => {
-    if (hoursWorked < 0 || hoursWorked > 24) {
+  // Handle hour submission
+  const handleHourSubmission = (hours: number) => {
+    if (hours < 0 || hours > 24) {
       toast({
         title: "Invalid hours",
         description: "Please enter a value between 0 and 24",
@@ -94,30 +62,10 @@ const Hours = () => {
       return;
     }
 
-    // Update the hours data
-    if (user && selectedDay) {
-      if (isStaff) {
-        mockHoursData.staffHours[user.id] = {
-          ...mockHoursData.staffHours[user.id],
-          [selectedDay]: hoursWorked
-        };
-      } else if (isSupervisor) {
-        mockHoursData.supervisorHours[user.id] = {
-          ...mockHoursData.supervisorHours[user.id],
-          [selectedDay]: hoursWorked
-        };
-      }
-    }
-
     toast({
       title: "Hours submitted",
-      description: `You have submitted ${hoursWorked} hours for ${new Date(currentMonth.getFullYear(), currentMonth.getMonth(), selectedDay || 1).toLocaleDateString()}`
+      description: `You have submitted ${hours} hours`
     });
-
-    setHoursWorked(0);
-    setLocation("");
-    setPeopleWorked(1);
-    setSelectedDay(null);
   };
 
   // Render notifications
@@ -151,10 +99,6 @@ const Hours = () => {
     );
   };
 
-  // Find supervisor name for staff view
-  const supervisor = users.find(u => u.id === user?.supervisorId);
-  const supervisorName = supervisor ? supervisor.name : "Not Assigned";
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -165,114 +109,34 @@ const Hours = () => {
       </div>
       
       {isStaff && (
-        <div className={isMobile ? "space-y-4" : ""}>
-          <HoursCalendar
-            currentMonth={currentMonth}
-            onMonthChange={setCurrentMonth}
-            selectedDay={selectedDay}
-            onDaySelect={setSelectedDay}
-            hoursData={mockHoursData.staffHours[user?.id || ""] || {}}
-            isStaff={true}
-            isSupervisor={false}
-          />
-          <HoursEntryForm
-            selectedDay={selectedDay}
-            currentMonth={currentMonth}
-            hoursWorked={hoursWorked}
-            setHoursWorked={setHoursWorked}
-            location={location}
-            setLocation={setLocation}
-            peopleWorked={peopleWorked}
-            setPeopleWorked={setPeopleWorked}
-            supervisorName={users.find(u => u.id === user?.supervisorId)?.name || "Not Assigned"}
-            onSubmit={handleHourSubmission}
-            onCancel={() => setSelectedDay(null)}
-          />
-          {!selectedDay && <StaffDashboard />}
-        </div>
+        <StaffHoursView
+          user={user}
+          mockHoursData={mockHoursData}
+          users={users}
+          onHourSubmission={handleHourSubmission}
+        />
       )}
       
       {isSupervisor && (
-        <div className={isMobile ? "overflow-x-auto" : ""}>
-          <HoursTable
-            staffList={users.filter(u => u.supervisorId === user?.id)}
-            allDaysInMonth={Array.from(
-              { length: new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate() },
-              (_, i) => i + 1
-            )}
-            hoursData={mockHoursData.supervisorHours}
-            isHeadManagerOrOwner={false}
-            isSupervisor={true}
-            handleUpdateHours={() => {}}
-            calculateTotalHours={(staffId) => {
-              const hours = mockHoursData.supervisorHours[staffId] || {};
-              return Object.values(hours).reduce((sum, h) => sum + Number(h), 0);
-            }}
-            getCellColor={() => ""}
-          />
-        </div>
+        <SupervisorHoursView
+          user={user}
+          mockHoursData={mockHoursData}
+          users={users}
+        />
       )}
       
       {(isManager || isHeadManagerOrOwner) && (
         <>
-          {isHeadManagerOrOwner && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Select Supervisor</label>
-              <Select
-                value={selectedSupervisor || ""}
-                onValueChange={(value) => setSelectedSupervisor(value || null)}
-              >
-                <SelectTrigger className="w-full md:w-72">
-                  <SelectValue placeholder="Select a supervisor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {allSupervisors.map(supervisor => (
-                    <SelectItem key={supervisor.id} value={supervisor.id}>
-                      {supervisor.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          
           {renderNotifications()}
-          
-          <Tabs defaultValue={isHeadManagerOrOwner ? "table" : "calendar"}>
-            <TabsList>
-              <TabsTrigger value="calendar">Calendar View</TabsTrigger>
-              <TabsTrigger value="table">Table View</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="calendar">
-              <HoursCalendar
-                currentMonth={currentMonth}
-                onMonthChange={setCurrentMonth}
-                selectedDay={selectedDay}
-                onDaySelect={setSelectedDay}
-                hoursData={mockHoursData.supervisorHours}
-                isStaff={false}
-                isSupervisor={false}
-              />
-            </TabsContent>
-            
-            <TabsContent value="table">
-              {selectedSupervisor && (
-                <div className="bg-white p-4 rounded-lg border border-border">
-                  <HoursTable
-                    staffList={getStaffForSupervisor(selectedSupervisor)}
-                    allDaysInMonth={allDaysInMonth}
-                    hoursData={mockHoursData.supervisorHours}
-                    isHeadManagerOrOwner={isHeadManagerOrOwner}
-                    isSupervisor={false}
-                    handleUpdateHours={handleUpdateHours}
-                    calculateTotalHours={calculateTotalHours}
-                    getCellColor={getCellColor}
-                  />
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+          <ManagerHoursView
+            allSupervisors={allSupervisors}
+            mockHoursData={mockHoursData}
+            getStaffForSupervisor={getStaffForSupervisor}
+            calculateTotalHours={calculateTotalHours}
+            getCellColor={getCellColor}
+            isHeadManagerOrOwner={isHeadManagerOrOwner}
+            users={users}
+          />
         </>
       )}
     </div>

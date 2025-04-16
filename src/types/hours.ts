@@ -1,7 +1,7 @@
 
 export interface HoursRecord {
   [userId: string]: {
-    [day: number]: number;
+    [day: string]: number;
   };
 }
 
