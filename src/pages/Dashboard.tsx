@@ -8,7 +8,7 @@ const Dashboard = () => {
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   
-  // Simulate data loading
+  // Simulate data loading and allow time for auth to initialize
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false)

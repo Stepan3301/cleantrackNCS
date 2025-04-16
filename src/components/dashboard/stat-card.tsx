@@ -1,15 +1,32 @@
 
-import { ArrowUpCircle, TrendingUp } from "lucide-react"
+import { ArrowUpCircle, TrendingUp } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface StatCardProps {
-  title: string
-  value: number | string
-  icon: React.ReactNode
-  change?: number
-  isPositive?: boolean
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  change?: number;
+  isPositive?: boolean;
+  isLoading?: boolean;
 }
 
-export function StatCard({ title, value, icon, change, isPositive }: StatCardProps) {
+export function StatCard({ title, value, icon, change, isPositive, isLoading = false }: StatCardProps) {
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg border border-border p-6">
+        <div className="flex justify-between items-start">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+          <Skeleton className="h-10 w-10 rounded-full" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg border border-border p-6">
       <div className="flex justify-between items-start">
@@ -29,5 +46,5 @@ export function StatCard({ title, value, icon, change, isPositive }: StatCardPro
         </div>
       </div>
     </div>
-  )
+  );
 }
