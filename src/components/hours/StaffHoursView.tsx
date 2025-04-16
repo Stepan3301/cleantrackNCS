@@ -4,7 +4,8 @@ import { HoursCalendar } from "./HoursCalendar";
 import { HoursEntryForm } from "./HoursEntryForm";
 import { StaffDashboard } from "./StaffDashboard";
 import { User } from "@/contexts/auth-context";
-import { HoursData } from "@/types/hours";
+import { HoursData, HoursRecord } from "@/types/hours";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StaffHoursViewProps {
   user: User;
@@ -25,6 +26,11 @@ export function StaffHoursView({
   const [location, setLocation] = useState("");
   const [peopleWorked, setPeopleWorked] = useState(1);
 
+  // Create a HoursRecord specifically for the current user
+  const userHours: HoursRecord = {
+    [user.id]: mockHoursData.staffHours[user.id] || {}
+  };
+
   const supervisor = users.find(u => u.id === user?.supervisorId);
   const supervisorName = supervisor ? supervisor.name : "Not Assigned";
 
@@ -43,7 +49,7 @@ export function StaffHoursView({
         onMonthChange={setCurrentMonth}
         selectedDay={selectedDay}
         onDaySelect={setSelectedDay}
-        hoursData={mockHoursData.staffHours[user?.id] || {}}
+        hoursData={userHours}
         isStaff={true}
         isSupervisor={false}
       />

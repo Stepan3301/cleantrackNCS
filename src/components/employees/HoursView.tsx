@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { HoursCalendar } from "@/components/hours/HoursCalendar";
 import { HoursTable } from "@/components/hours/HoursTable";
-import { mockHoursData } from "@/pages/Hours";
+import { HoursRecord } from "@/types/hours";
+import { supabase } from "@/integrations/supabase/client";
 
 interface HoursViewProps {
   isOpen: boolean;
@@ -16,10 +17,13 @@ interface HoursViewProps {
 export function HoursView({ isOpen, employee, onClose }: HoursViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
-  const employeeHours = employee.role === "supervisor" 
-    ? mockHoursData.supervisorHours[employee.id] || {}
-    : mockHoursData.staffHours[employee.id] || {};
+  const [employeeHours, setEmployeeHours] = useState<HoursRecord>({
+    [employee.id]: {}
+  });
 
+  // TODO: Implement actual data fetching from Supabase
+  // Currently using a placeholder to resolve type issues
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl">
@@ -46,12 +50,12 @@ export function HoursView({ isOpen, employee, onClose }: HoursViewProps) {
                   { length: new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate() },
                   (_, i) => i + 1
                 )}
-                hoursData={mockHoursData.supervisorHours}
+                hoursData={employeeHours}
                 isHeadManagerOrOwner={false}
                 isSupervisor={true}
                 handleUpdateHours={() => {}}
                 calculateTotalHours={(staffId) => {
-                  const hours = mockHoursData.supervisorHours[staffId] || {};
+                  const hours = employeeHours[staffId] || {};
                   return Object.values(hours).reduce((sum, h) => sum + Number(h), 0);
                 }}
                 getCellColor={() => ""}
