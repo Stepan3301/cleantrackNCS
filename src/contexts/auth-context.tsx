@@ -1,9 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from "react"
-import { supabase } from "@/integrations/supabase/client"
-import { User as AuthUser } from "@supabase/supabase-js"
 
-// Update UserRole type to match database expectations
-export type UserRole = "owner" | "head_manager" | "manager" | "supervisor" | "cleaner"
+// Define user roles
+export type UserRole = "owner" | "head_manager" | "manager" | "supervisor" | "staff"
 
 // User interface with more explicit optional fields to handle all combinations
 export interface User {
@@ -11,8 +9,9 @@ export interface User {
   name: string
   email: string
   role: UserRole
-  supervisorId?: string
-  managerId?: string
+  password?: string
+  supervisorId?: string  // ID of the supervisor (for staff)
+  managerId?: string     // ID of the manager (for supervisors)
 }
 
 // Context interface
@@ -22,232 +21,222 @@ interface AuthContextType {
   logout: () => void
   register: (userData: any) => Promise<boolean>
   loading: boolean
-  users: User[]
-  assignSupervisor: (userId: string, supervisorId: string) => Promise<void>
-  assignManager: (supervisorId: string, managerId: string) => Promise<void>
-  deactivateUser: (userId: string) => Promise<void>
+  users: User[]  // Updated type
+  assignSupervisor: (userId: string, supervisorId: string) => void
+  assignManager: (supervisorId: string, managerId: string) => void
+  deactivateUser: (userId: string) => void
   isUserManager: (userId: string) => boolean
   isUserSupervisor: (userId: string) => boolean
   canUserManage: (currentUser: User | null, targetUserId: string) => boolean
 }
 
+// Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Sample user data for demo
+const mockUsers: User[] = [
+  { 
+    id: "1", 
+    name: "Admin User", 
+    email: "admin@sparkle.ae", 
+    password: "admin123", 
+    role: "owner" as UserRole 
+  },
+  { 
+    id: "2", 
+    name: "Head Manager", 
+    email: "manager@sparkle.ae", 
+    password: "manager123", 
+    role: "head_manager" as UserRole 
+  },
+  { 
+    id: "3", 
+    name: "Supervisor", 
+    email: "supervisor@sparkle.ae", 
+    password: "supervisor123", 
+    role: "supervisor" as UserRole,
+    managerId: "7" // Assigned to Khaled Rahman (manager)
+  },
+  { 
+    id: "4", 
+    name: "Staff Member", 
+    email: "staff@sparkle.ae", 
+    password: "staff123", 
+    role: "staff" as UserRole,
+    supervisorId: "3" // Assigned to Supervisor
+  }
+]
+
+// Provider component
 export function AuthContextProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [users, setUsers] = useState<User[]>([])
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null)
-
-  // Fetch users from Supabase
-  const fetchUsers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('users_profiles')
-        .select('*')
-      
-      if (error) throw error
-      
-      setUsers(data || [])
-    } catch (error) {
-      console.error('Error fetching users:', error)
-    }
-  }
+  const [users, setUsers] = useState<User[]>(mockUsers)
 
   // Check for existing session on mount
   useEffect(() => {
-    // First set up the auth listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        const currentUser = session?.user
-        setAuthUser(currentUser || null)
-        
-        if (currentUser) {
-          const { data: profile } = await supabase
-            .from('users_profiles')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single()
-            
-          if (profile) {
-            setUser({
-              id: profile.id,
-              name: profile.name,
-              email: profile.email,
-              role: profile.role,
-              supervisorId: profile.supervisor_id,
-              managerId: profile.manager_id
-            })
-          }
-        } else {
-          setUser(null)
-        }
-        setLoading(false)
-      }
-    )
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const currentUser = session?.user
-      setAuthUser(currentUser || null)
-      
-      if (currentUser) {
-        supabase
-          .from('users_profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single()
-          .then(({ data: profile }) => {
-            if (profile) {
-              setUser({
-                id: profile.id,
-                name: profile.name,
-                email: profile.email,
-                role: profile.role,
-                supervisorId: profile.supervisor_id,
-                managerId: profile.manager_id
-              })
-            }
-          })
-      }
-      setLoading(false)
-    })
-
-    // Fetch all users initially
-    fetchUsers()
-
-    return () => {
-      subscription.unsubscribe()
+    const storedUser = localStorage.getItem("user")
+    if (storedUser) {
+      setUser(JSON.parse(storedUser))
     }
+    setLoading(false)
   }, [])
 
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
+    setLoading(true)
+    
+    // In a real app, this would be an API call
     try {
-      setLoading(true)
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800))
       
-      if (error) throw error
+      const foundUser = users.find(
+        u => u.email === email && u.password === password
+      )
       
-      return true
-    } catch (error) {
-      console.error('Login error:', error)
-      return false
-    } finally {
+      if (foundUser) {
+        // Remove password before storing in state/localStorage
+        const { password: _, ...safeUser } = foundUser
+        setUser(safeUser)
+        localStorage.setItem("user", JSON.stringify(safeUser))
+        localStorage.setItem("isAuthenticated", "true")
+        setLoading(false)
+        return true
+      }
+      
       setLoading(false)
+      return false
+    } catch (error) {
+      console.error("Login error", error)
+      setLoading(false)
+      return false
     }
   }
 
   // Logout function
-  const logout = async () => {
-    try {
-      await supabase.auth.signOut()
-      setUser(null)
-      setAuthUser(null)
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
+  const logout = () => {
+    setUser(null)
+    localStorage.removeItem("user")
+    localStorage.removeItem("isAuthenticated")
   }
 
-  // Register function
+  // Register function (actually adds the user to our mock database)
   const register = async (userData: any): Promise<boolean> => {
+    setLoading(true)
+    
     try {
-      setLoading(true)
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
-      const { error } = await supabase.auth.signUp({
+      // Generate unique ID
+      const id = (users.length + 1).toString()
+      
+      // Create new user object
+      const newUser = {
+        id,
+        name: userData.name,
         email: userData.email,
         password: userData.password,
-        options: {
-          data: {
-            name: userData.name,
-            role: userData.role
-          }
-        }
-      })
+        role: userData.role as UserRole
+      }
       
-      if (error) throw error
+      // Add to mock users array
+      setUsers(prevUsers => [...prevUsers, newUser])
       
+      console.log("Registration submitted:", userData)
+      
+      // Set the user as logged in
+      const { password: _, ...safeUser } = newUser
+      setUser(safeUser)
+      localStorage.setItem("user", JSON.stringify(safeUser))
+      localStorage.setItem("isAuthenticated", "true")
+      
+      setLoading(false)
       return true
     } catch (error) {
-      console.error('Registration error:', error)
-      return false
-    } finally {
+      console.error("Registration error", error)
       setLoading(false)
+      return false
     }
   }
 
-  // Assign supervisor to staff member
-  const assignSupervisor = async (userId: string, supervisorId: string) => {
-    try {
-      const { error } = await supabase
-        .from('users_profiles')
-        .update({ supervisor_id: supervisorId })
-        .eq('id', userId)
-      
-      if (error) throw error
-      
-      await fetchUsers()
-    } catch (error) {
-      console.error('Error assigning supervisor:', error)
+  // Assign supervisor to staff member - FIXED to handle TypeScript properly
+  const assignSupervisor = (userId: string, supervisorId: string) => {
+    setUsers(prevUsers => 
+      prevUsers.map(user => {
+        if (user.id === userId) {
+          // Create a new user object with the supervisorId
+          const updatedUser = { ...user };
+          updatedUser.supervisorId = supervisorId;
+          // If user has managerId, make sure to keep it undefined if it was undefined
+          if (!('managerId' in user)) {
+            updatedUser.managerId = undefined;
+          }
+          return updatedUser;
+        }
+        return user;
+      })
+    )
+    
+    // Update current user if it's the one being modified
+    if (user && user.id === userId) {
+      setUser({ ...user, supervisorId })
+      localStorage.setItem("user", JSON.stringify({ ...user, supervisorId }))
     }
   }
 
-  // Assign manager to supervisor
-  const assignManager = async (supervisorId: string, managerId: string) => {
-    try {
-      const { error } = await supabase
-        .from('users_profiles')
-        .update({ manager_id: managerId })
-        .eq('id', supervisorId)
-      
-      if (error) throw error
-      
-      await fetchUsers()
-    } catch (error) {
-      console.error('Error assigning manager:', error)
+  // Assign manager to supervisor - FIXED to handle TypeScript properly
+  const assignManager = (supervisorId: string, managerId: string) => {
+    setUsers(prevUsers => 
+      prevUsers.map(user => {
+        if (user.id === supervisorId) {
+          // Create a new user object with the managerId
+          const updatedUser = { ...user };
+          updatedUser.managerId = managerId;
+          // If user has supervisorId, make sure to keep it undefined if it was undefined
+          if (!('supervisorId' in user)) {
+            updatedUser.supervisorId = undefined;
+          }
+          return updatedUser;
+        }
+        return user;
+      })
+    )
+    
+    // Update current user if it's the one being modified
+    if (user && user.id === supervisorId) {
+      setUser({ ...user, managerId })
+      localStorage.setItem("user", JSON.stringify({ ...user, managerId }))
     }
   }
 
-  // Deactivate user
-  const deactivateUser = async (userId: string) => {
-    try {
-      const { error } = await supabase
-        .from('users_profiles')
-        .delete()
-        .eq('id', userId)
-      
-      if (error) throw error
-      
-      await fetchUsers()
-    } catch (error) {
-      console.error('Error deactivating user:', error)
-    }
+  // Deactivate user (in a real app, you'd likely set a status flag rather than delete)
+  const deactivateUser = (userId: string) => {
+    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId))
   }
-
+  
   // Helper functions for role checks
   const isUserManager = (userId: string) => {
     const foundUser = users.find(u => u.id === userId)
     return foundUser?.role === "manager"
   }
-
+  
   const isUserSupervisor = (userId: string) => {
     const foundUser = users.find(u => u.id === userId)
-    return foundUser?.role === "supervisor"
+    return foundUser?.role === "supervisor" 
   }
-
+  
   // Function to check if current user can manage/see target user
   const canUserManage = (currentUser: User | null, targetUserId: string): boolean => {
     if (!currentUser) return false
-
+    
     // Owner and head manager can see everyone
     if (currentUser.role === "owner" || currentUser.role === "head_manager") return true
-
+    
     const targetUser = users.find(u => u.id === targetUserId)
     if (!targetUser) return false
-
+    
     // Managers can see their supervisors and those supervisors' staff
     if (currentUser.role === "manager") {
       if (targetUser.role === "supervisor" && targetUser.managerId === currentUser.id) return true
@@ -257,23 +246,23 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
       }
       return false
     }
-
+    
     // Supervisors can only see their staff
     if (currentUser.role === "supervisor") {
       return targetUser.role === "staff" && targetUser.supervisorId === currentUser.id
     }
-
+    
     // Staff can't manage anyone
     return false
   }
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      login,
-      logout,
-      register,
-      loading,
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      register, 
+      loading, 
       users,
       assignSupervisor,
       assignManager,
