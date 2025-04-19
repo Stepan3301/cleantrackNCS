@@ -144,7 +144,7 @@ export const workingHoursService = {
           description: hoursData.description || null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          status: 'pending',
+          status: 'approved', // Always set to approved
           approved_by: null
         }];
       }
@@ -167,7 +167,7 @@ export const workingHoursService = {
           description: hoursData.description || null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          status: 'pending',
+          status: 'approved', // Always set to approved
           approved_by: null
         }];
       }
@@ -187,7 +187,8 @@ export const workingHoursService = {
         date: hoursData.date,
         hours_worked: hoursData.hours_worked,
         location: hoursData.location || null,
-        description: hoursData.description || null
+        description: hoursData.description || null,
+        status: 'approved' // Always set status to approved
       };
       
       console.log("📢 [SUBMIT] Sanitized data for Supabase submission:", validSubmissionData);
@@ -224,7 +225,8 @@ export const workingHoursService = {
               .update({
                 hours_worked: hoursData.hours_worked,
                 location: hoursData.location || null,
-                description: hoursData.description || null
+                description: hoursData.description || null,
+                status: 'approved' // Ensure status is approved when updating
               })
               .eq('user_id', user.id) // Use authenticated user ID
               .eq('date', hoursData.date)
@@ -286,7 +288,7 @@ export const workingHoursService = {
             description: hoursData.description || null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            status: 'pending',
+            status: 'approved', // Always set to approved
             approved_by: null
           }];
         }
@@ -349,7 +351,8 @@ export const workingHoursService = {
         date: today, 
         hours_worked: 8,
         location: "Debug Test",
-        description: "Created via debug function"
+        description: "Created via debug function",
+        status: 'approved' // Always set to approved
       };
       
       console.log("DEBUG: Inserting data:", data);
@@ -369,206 +372,6 @@ export const workingHoursService = {
     } catch (err) {
       console.error("DEBUG: Exception inserting record:", err);
       return { success: false, error: err };
-    }
-  },
-
-  /**
-   * Updates the status of a working hours entry
-   * @param id - The ID of the working hours entry to update
-   * @param status - The new status (e.g., 'approved', 'rejected')
-   * @param approvedBy - The ID of the user approving/rejecting the hours
-   */
-  async updateWorkingHoursStatus(
-    id: string,
-    status: 'pending' | 'approved' | 'rejected',
-    approvedBy?: string
-  ): Promise<{ success: boolean; error?: string }> {
-    console.log(`[UPDATE STATUS] Updating working hours status: id=${id}, status=${status}, approvedBy=${approvedBy}`);
-    
-    try {
-      // Validate inputs
-      if (!id) {
-        console.error('[UPDATE STATUS] Missing required ID');
-        return { success: false, error: 'Missing required ID' };
-      }
-      
-      if (!['pending', 'approved', 'rejected'].includes(status)) {
-        console.error(`[UPDATE STATUS] Invalid status: ${status}`);
-        return { success: false, error: 'Invalid status' };
-      }
-      
-      // First, try to use the RPC function which handles permissions properly
-      try {
-        console.log('[UPDATE STATUS] Trying to use RPC function');
-        const { data, error } = await supabase.rpc('update_working_hours_status', {
-          p_hours_id: id,
-          p_status: status,
-          p_approved_by: approvedBy
-        });
-        
-        if (error) {
-          console.error(`[UPDATE STATUS] RPC Error: ${error.message}`);
-          // Fall back to direct update if RPC fails
-          console.log('[UPDATE STATUS] Falling back to direct update');
-        } else {
-          console.log(`[UPDATE STATUS] RPC Success: ${JSON.stringify(data)}`);
-          return { success: true };
-        }
-      } catch (rpcError) {
-        console.error('[UPDATE STATUS] RPC Exception:', rpcError);
-        console.log('[UPDATE STATUS] Falling back to direct update');
-      }
-      
-      // Verify the working_hours table exists before direct update
-      await this.ensureWorkingHoursTableExists();
-      
-      // Prepare update object for direct update
-      const updateData: any = {
-        status,
-        updated_at: new Date().toISOString()
-      };
-      
-      // Add approvedBy if provided and status is 'approved'
-      if (status === 'approved' && approvedBy) {
-        updateData.approved_by = approvedBy;
-      }
-      
-      console.log(`[UPDATE STATUS] Direct update payload: ${JSON.stringify(updateData)}`);
-      
-      // Update the record directly
-      const { data, error } = await supabase
-        .from('working_hours')
-        .update(updateData)
-        .eq('id', id)
-        .select();
-      
-      if (error) {
-        console.error(`[UPDATE STATUS] Error updating working hours status: ${error.message}`, error);
-        return { success: false, error: error.message };
-      }
-      
-      console.log(`[UPDATE STATUS] Successfully updated status for record: ${id}`);
-      return { success: true };
-      
-    } catch (error) {
-      console.error('[UPDATE STATUS] Exception updating working hours status:', error);
-      return { success: false, error: error.message };
-    }
-  },
-
-  /**
-   * Get pending approvals for working hours
-   * @param supervisorId - Optional supervisor ID to filter by
-   * @returns A list of pending working hours approvals
-   */
-  async getPendingApprovals(supervisorId?: string) {
-    console.log("[APPROVALS] Getting pending approvals");
-    
-    try {
-      // First try to use the RPC function which handles permissions properly
-      try {
-        console.log("[APPROVALS] Trying to use RPC function");
-        const { data, error } = await supabase.rpc('get_pending_approvals');
-        
-        if (error) {
-          console.error(`[APPROVALS] RPC Error: ${error.message}`);
-          console.log("[APPROVALS] Falling back to direct query");
-        } else {
-          console.log(`[APPROVALS] RPC Success: ${data?.length || 0} records found`);
-          
-          // Process the results to match the expected format
-          const processedData = data?.map(item => {
-            return {
-              ...item,
-              user_email: item.user_name ? item.user_name.split(' ')[0].toLowerCase() + '@example.com' : 'unknown@example.com',
-              user_name: item.user_name || 'Unknown User',
-              hours: typeof item.hours_worked === 'string' 
-                ? parseFloat(item.hours_worked) 
-                : item.hours_worked
-            };
-          }) || [];
-          
-          return processedData;
-        }
-      } catch (rpcError) {
-        console.error('[APPROVALS] RPC Exception:', rpcError);
-        console.log('[APPROVALS] Falling back to direct query');
-      }
-      
-      // Fallback to the original implementation
-      // Ensure the working_hours table exists
-      await this.ensureWorkingHoursTableExists();
-      
-      // Build the query
-      let query = supabase
-        .from('working_hours')
-        .select(`
-          *,
-          profiles!working_hours_user_id_fkey (
-            email,
-            full_name,
-            role,
-            supervisor_id
-          )
-        `)
-        .eq('status', 'pending');
-      
-      // Add supervisor filter if specified
-      if (supervisorId && supervisorId !== 'all') {
-        console.log(`[APPROVALS] Filtering by supervisor ID: ${supervisorId}`);
-        query = query.eq('profiles.supervisor_id', supervisorId);
-      }
-      
-      // Execute the query
-      const { data, error } = await query.order('date', { ascending: false });
-      
-      if (error) {
-        console.error('[APPROVALS] Error fetching pending approvals:', error);
-        
-        // Check if this is a relation error (profiles table might not exist)
-        if (error.message.includes('relation') || error.code === '42P01') {
-          console.log('[APPROVALS] Relation error, trying simpler query without profiles join');
-          
-          // Try a simpler query without the join
-          const { data: simpleData, error: simpleError } = await supabase
-            .from('working_hours')
-            .select('*')
-            .eq('status', 'pending')
-            .order('date', { ascending: false });
-            
-          if (simpleError) {
-            console.error('[APPROVALS] Error with simpler query:', simpleError);
-            return [];
-          }
-          
-          return simpleData || [];
-        }
-        
-        return [];
-      }
-      
-      // Process the results to make them easier to work with
-      const processedData = data?.map(item => {
-        // Get profile data if available
-        const profile = item.profiles || {};
-        
-        return {
-          ...item,
-          // Add these fields directly to make them easier to access
-          user_email: profile.email || 'Unknown',
-          user_name: profile.full_name || 'Unknown User',
-          // Convert hours_worked to a number if it's a string
-          hours: typeof item.hours_worked === 'string' 
-            ? parseFloat(item.hours_worked) 
-            : item.hours_worked
-        };
-      }) || [];
-      
-      console.log(`[APPROVALS] Found ${processedData.length} pending approvals`);
-      return processedData;
-    } catch (error) {
-      console.error('[APPROVALS] Exception in getPendingApprovals:', error);
-      return [];
     }
   }
 };
@@ -617,7 +420,8 @@ if (typeof window !== 'undefined') {
           date: testDate,
           hours_worked: 5,
           location: "Debug Direct Insert",
-          description: "Test record created by debugging function"
+          description: "Test record created by debugging function",
+          status: 'approved' // Always set to approved
         };
         
         console.log("Attempting direct insert:", testRecord);

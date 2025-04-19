@@ -572,7 +572,7 @@ BEGIN
       hours_worked NUMERIC(5, 2) NOT NULL,
       description TEXT,
       location TEXT,
-      status TEXT NOT NULL DEFAULT 'pending',
+      status TEXT NOT NULL DEFAULT 'approved',
       approved_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
@@ -609,33 +609,10 @@ BEGIN
         )
       );
       
-    CREATE POLICY "Supervisors can update their staff's hours" 
-      ON public.working_hours 
-      FOR UPDATE 
-      USING (
-        EXISTS (
-          SELECT 1 FROM public.profiles
-          WHERE profiles.id = working_hours.user_id
-          AND profiles.supervisor_id = auth.uid()
-        )
-      );
-      
     -- Create a policy for managers to view all hours
     CREATE POLICY "Managers can view all hours" 
       ON public.working_hours 
       FOR SELECT 
-      USING (
-        EXISTS (
-          SELECT 1 FROM public.profiles
-          WHERE profiles.id = auth.uid()
-          AND profiles.role IN ('manager', 'head_manager', 'owner')
-        )
-      );
-      
-    -- Create a policy for managers to update all hours
-    CREATE POLICY "Managers can update all hours" 
-      ON public.working_hours 
-      FOR UPDATE 
       USING (
         EXISTS (
           SELECT 1 FROM public.profiles
@@ -650,186 +627,6 @@ BEGIN
   END IF;
   
   RETURN result;
-END;
-$$;
-
--- Create a function to update working hours status
-CREATE OR REPLACE FUNCTION update_working_hours_status(
-  p_hours_id UUID,
-  p_status TEXT,
-  p_approved_by UUID DEFAULT NULL
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  result JSONB;
-  v_user_id UUID;
-  v_approver_role TEXT;
-  v_hours_user_id UUID;
-  v_is_supervisor BOOLEAN;
-  v_is_manager BOOLEAN;
-BEGIN
-  -- Validate parameters
-  IF p_hours_id IS NULL THEN
-    RETURN jsonb_build_object('success', false, 'message', 'Hours ID is required');
-  END IF;
-  
-  IF p_status IS NULL OR p_status NOT IN ('pending', 'approved', 'rejected') THEN
-    RETURN jsonb_build_object('success', false, 'message', 'Invalid status. Must be pending, approved, or rejected');
-  END IF;
-  
-  -- Get current user ID
-  v_user_id := auth.uid();
-  IF v_user_id IS NULL AND p_approved_by IS NOT NULL THEN
-    v_user_id := p_approved_by;
-  END IF;
-  
-  IF v_user_id IS NULL THEN
-    RETURN jsonb_build_object('success', false, 'message', 'User must be authenticated or approved_by must be provided');
-  END IF;
-  
-  -- Get user role from profiles
-  SELECT role INTO v_approver_role
-  FROM public.profiles
-  WHERE id = v_user_id;
-  
-  -- Get the user ID of the hours record
-  SELECT user_id INTO v_hours_user_id
-  FROM public.working_hours
-  WHERE id = p_hours_id;
-  
-  IF v_hours_user_id IS NULL THEN
-    RETURN jsonb_build_object('success', false, 'message', 'Working hours record not found');
-  END IF;
-  
-  -- Check if user is supervisor of the hours user
-  SELECT COUNT(*) > 0 INTO v_is_supervisor
-  FROM public.profiles
-  WHERE id = v_hours_user_id AND supervisor_id = v_user_id;
-  
-  -- Check if user is manager or higher
-  v_is_manager := v_approver_role IN ('manager', 'head_manager', 'owner');
-  
-  -- Users can only set their own hours to pending
-  IF v_user_id = v_hours_user_id AND p_status != 'pending' THEN
-    RETURN jsonb_build_object('success', false, 'message', 'Users can only set their own hours to pending');
-  END IF;
-  
-  -- Only supervisors or managers can approve/reject
-  IF NOT (v_is_supervisor OR v_is_manager) AND v_user_id != v_hours_user_id THEN
-    RETURN jsonb_build_object('success', false, 'message', 'Only supervisors or managers can update status for other users');
-  END IF;
-  
-  -- Update the working hours record
-  UPDATE public.working_hours
-  SET 
-    status = p_status,
-    approved_by = CASE WHEN p_status = 'approved' THEN v_user_id ELSE NULL END,
-    updated_at = now()
-  WHERE id = p_hours_id;
-  
-  result = jsonb_build_object(
-    'success', true, 
-    'message', 'Working hours status updated',
-    'hours_id', p_hours_id,
-    'status', p_status,
-    'approved_by', CASE WHEN p_status = 'approved' THEN v_user_id ELSE NULL END
-  );
-  
-  RETURN result;
-END;
-$$;
-
--- Create a function to get pending approvals for a supervisor
-CREATE OR REPLACE FUNCTION get_pending_approvals()
-RETURNS TABLE (
-  id UUID,
-  user_id UUID,
-  user_name TEXT,
-  date TEXT,
-  hours_worked NUMERIC(5, 2),
-  description TEXT,
-  location TEXT,
-  status TEXT,
-  created_at TIMESTAMPTZ
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  v_user_id UUID;
-  v_user_role TEXT;
-BEGIN
-  -- Get current user ID
-  v_user_id := auth.uid();
-  IF v_user_id IS NULL THEN
-    RAISE EXCEPTION 'User must be authenticated';
-  END IF;
-  
-  -- Get user role
-  SELECT role INTO v_user_role
-  FROM public.profiles
-  WHERE id = v_user_id;
-  
-  -- Return different results based on role
-  IF v_user_role IN ('manager', 'head_manager', 'owner') THEN
-    -- Managers see all pending hours
-    RETURN QUERY
-    SELECT 
-      wh.id,
-      wh.user_id,
-      p.name AS user_name,
-      wh.date,
-      wh.hours_worked,
-      wh.description,
-      wh.location,
-      wh.status,
-      wh.created_at
-    FROM 
-      public.working_hours wh
-      JOIN public.profiles p ON wh.user_id = p.id
-    WHERE 
-      wh.status = 'pending'
-    ORDER BY 
-      wh.created_at DESC;
-  ELSIF v_user_role = 'supervisor' THEN
-    -- Supervisors see their staff's pending hours
-    RETURN QUERY
-    SELECT 
-      wh.id,
-      wh.user_id,
-      p.name AS user_name,
-      wh.date,
-      wh.hours_worked,
-      wh.description,
-      wh.location,
-      wh.status,
-      wh.created_at
-    FROM 
-      public.working_hours wh
-      JOIN public.profiles p ON wh.user_id = p.id
-    WHERE 
-      wh.status = 'pending'
-      AND p.supervisor_id = v_user_id
-    ORDER BY 
-      wh.created_at DESC;
-  ELSE
-    -- Staff see nothing
-    RETURN QUERY
-    SELECT 
-      NULL::UUID,
-      NULL::UUID,
-      NULL::TEXT,
-      NULL::TEXT,
-      NULL::NUMERIC(5,2),
-      NULL::TEXT,
-      NULL::TEXT,
-      NULL::TEXT,
-      NULL::TIMESTAMPTZ
-    WHERE 1=0;
-  END IF;
 END;
 $$;
 
@@ -912,60 +709,6 @@ $$;
       
     } catch (error) {
       setLogs(prev => [...prev, `[SETUP-TABLE] Error setting up working hours table: ${error.message}`]);
-    } finally {
-      setTestingAction(null);
-    }
-  };
-
-  const handleTestApproval = async () => {
-    try {
-      setTestingAction('test-approval');
-      addLog("Testing working hours approval...");
-      
-      // Use authenticated user ID or manual ID
-      const userId = authUser?.id || manualUserId;
-      
-      if (!userId) {
-        addLog("❌ Cannot test approval: No user ID available");
-        setTestingAction(null);
-        return;
-      }
-      
-      addLog(`Using user ID: ${userId}`);
-      
-      if (!workingHoursService) {
-        addLog("❌ Working hours service not available");
-        setTestingAction(null);
-        return;
-      }
-      
-      const today = new Date();
-      const formattedDate = format(today, 'yyyy-MM-dd');
-      const timestamp = Date.now().toString().slice(-4);
-      
-      // Create test data
-      const testData = {
-        user_id: userId,
-        date: `${formattedDate}-approval-${timestamp}`,
-        hours_worked: 2,
-        location: "Approval Test",
-        description: "Created for approval testing"
-      };
-      
-      addLog(`Submitting for approval: ${JSON.stringify(testData)}`);
-      
-      const result = await workingHoursService.submitWorkingHours(testData);
-      
-      if (result) {
-        addLog(`✅ Approval test successful: ${JSON.stringify(result)}`);
-        setInsertResult(result);
-      } else {
-        addLog("❌ Approval test failed");
-      }
-      
-    } catch (error) {
-      addLog(`❌ Exception in approval test: ${error.message}`);
-      console.error("Full error:", error);
     } finally {
       setTestingAction(null);
     }
@@ -1054,14 +797,6 @@ $$;
               disabled={testingAction === 'setup-hours-table'}
             >
               {testingAction === 'setup-hours-table' ? 'Setting up...' : 'Setup Working Hours Table'}
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              onClick={handleTestApproval}
-              disabled={testingAction === 'test-approval' || !manualUserId}
-            >
-              {testingAction === 'test-approval' ? 'Testing...' : 'Test Hours Approval'}
             </Button>
           </div>
           
