@@ -19,7 +19,6 @@ import "@/styles/modern-employees.css"
 
 const Employees = () => {
   const { user, users, canUserManage, deactivateUser } = useAuth()
-  const [searchQuery, setSearchQuery] = useState("")
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null)
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
@@ -37,7 +36,7 @@ const Employees = () => {
   const isManager = user?.role === "manager"
   const isSupervisor = user?.role === "supervisor"
   
-  // Filter visible employees based on user role hierarchy and search/role filters
+  // Filter visible employees based on user role hierarchy and role filters
   const visibleEmployees = users
     .filter(employee => {
       if (employee.id === user?.id) return false
@@ -54,11 +53,8 @@ const Employees = () => {
       return false
     })
     .filter(employee => {
-      const matchesSearch = employee.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         employee.email?.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesRole = !selectedRole || employee.role === selectedRole
-      
-      return matchesSearch && matchesRole
+      // Filter by selected role
+      return !selectedRole || employee.role === selectedRole
     })
   
   const handleDeactivateConfirm = () => {
@@ -108,9 +104,7 @@ const Employees = () => {
         </div>
         
         <ModernEmployeeFilters
-          searchQuery={searchQuery}
           selectedRole={selectedRole}
-          onSearchChange={setSearchQuery}
           onRoleChange={setSelectedRole}
           showManagerFilter={isOwnerOrHeadManager}
           userRole={user?.role}
