@@ -3,6 +3,39 @@
  * Provides functions to clear browser caches and reload the application
  */
 
+// Helper for safe localStorage access
+const safeLocalStorage = {
+  getItem(key: string, defaultValue: any = null): any {
+    try {
+      const value = localStorage.getItem(key);
+      return value !== null ? value : defaultValue;
+    } catch (err) {
+      console.error(`Error getting ${key} from localStorage:`, err);
+      return defaultValue;
+    }
+  },
+  
+  setItem(key: string, value: string): boolean {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (err) {
+      console.error(`Error setting ${key} in localStorage:`, err);
+      return false;
+    }
+  },
+  
+  removeItem(key: string): boolean {
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch (err) {
+      console.error(`Error removing ${key} from localStorage:`, err);
+      return false;
+    }
+  }
+};
+
 // Clear all Supabase auth-related data from localStorage
 export const clearSupabaseCache = (): void => {
   console.log('🧹 Clearing Supabase cache data...');
@@ -14,7 +47,7 @@ export const clearSupabaseCache = (): void => {
         key.startsWith('supabase.') || 
         key === 'supabase_session_timestamp'
       ) {
-        localStorage.removeItem(key);
+        safeLocalStorage.removeItem(key);
       }
     });
   } catch (err) {
@@ -33,7 +66,7 @@ export const clearAppStateCache = (): void => {
         key.startsWith('ct-') ||
         key === 'cleantrack-theme'
       ) {
-        localStorage.removeItem(key);
+        safeLocalStorage.removeItem(key);
       }
     });
   } catch (err) {
@@ -41,37 +74,24 @@ export const clearAppStateCache = (): void => {
   }
 };
 
-// Clear Service Worker cache
-export const clearServiceWorkerCache = async (): Promise<boolean> => {
-  console.log('🧹 Clearing Service Worker cache...');
+// Clear browser cache using the window.clearAppCache helper if available
+export const clearBrowserCache = async (): Promise<boolean> => {
+  console.log('🧹 Clearing browser cache...');
   try {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      // Send message to service worker to clear its cache
-      navigator.serviceWorker.controller.postMessage({
-        type: 'CLEAR_CACHE'
-      });
-      
-      // Wait for confirmation (with timeout)
-      const timeoutPromise = new Promise<boolean>((resolve) => {
-        setTimeout(() => resolve(true), 1000);
-      });
-      
-      const messagePromise = new Promise<boolean>((resolve) => {
-        const messageHandler = (event: MessageEvent) => {
-          if (event.data && event.data.type === 'CACHE_CLEARED') {
-            navigator.serviceWorker.removeEventListener('message', messageHandler);
-            resolve(true);
-          }
-        };
-        navigator.serviceWorker.addEventListener('message', messageHandler);
-      });
-      
-      // Return true if either timeout passes or we get confirmation
-      return Promise.race([timeoutPromise, messagePromise]);
+    if (window.clearAppCache) {
+      return window.clearAppCache();
     }
-    return true;
+    
+    // Fallback if the helper isn't available
+    if ('caches' in window) {
+      const keys = await window.caches.keys();
+      await Promise.all(keys.map(key => window.caches.delete(key)));
+      return true;
+    }
+    
+    return false;
   } catch (err) {
-    console.error('Failed to clear service worker cache:', err);
+    console.error('Failed to clear browser cache:', err);
     return false;
   }
 };
@@ -81,7 +101,7 @@ export const clearAllCaches = async (): Promise<boolean> => {
   try {
     clearSupabaseCache();
     clearAppStateCache();
-    await clearServiceWorkerCache();
+    await clearBrowserCache();
     return true;
   } catch (err) {
     console.error('Error clearing caches:', err);
@@ -92,7 +112,11 @@ export const clearAllCaches = async (): Promise<boolean> => {
 // Function to perform a clean reload
 export const cleanReload = async (): Promise<void> => {
   // Set a flag to indicate we're doing a clean reload
-  sessionStorage.setItem('cleantrack_reload', 'true');
+  try {
+    sessionStorage.setItem('cleantrack_reload', 'true');
+  } catch (err) {
+    console.error('Error setting reload flag in sessionStorage:', err);
+  }
   
   // Clear caches
   await clearAllCaches();
@@ -103,19 +127,24 @@ export const cleanReload = async (): Promise<void> => {
 
 // Check if we're coming back from a clean reload
 export const isAfterCleanReload = (): boolean => {
-  const isCleanReload = sessionStorage.getItem('cleantrack_reload') === 'true';
-  if (isCleanReload) {
-    // Clear the flag
-    sessionStorage.removeItem('cleantrack_reload');
+  try {
+    const isCleanReload = sessionStorage.getItem('cleantrack_reload') === 'true';
+    if (isCleanReload) {
+      // Clear the flag
+      sessionStorage.removeItem('cleantrack_reload');
+    }
+    return isCleanReload;
+  } catch (err) {
+    console.error('Error checking clean reload status:', err);
+    return false;
   }
-  return isCleanReload;
 };
 
 // Check if the application has had connectivity issues
 export const hasConnectivityIssues = (): boolean => {
   try {
-    const lastConnErr = localStorage.getItem('cleantrack_conn_error');
-    const lastConnTime = localStorage.getItem('cleantrack_conn_time');
+    const lastConnErr = safeLocalStorage.getItem('cleantrack_conn_error');
+    const lastConnTime = safeLocalStorage.getItem('cleantrack_conn_time');
     
     if (!lastConnErr || !lastConnTime) return false;
     
@@ -123,6 +152,7 @@ export const hasConnectivityIssues = (): boolean => {
     const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
     return parseInt(lastConnTime, 10) > fiveMinutesAgo;
   } catch (err) {
+    console.error('Error checking connectivity issues:', err);
     return false;
   }
 };
@@ -130,8 +160,8 @@ export const hasConnectivityIssues = (): boolean => {
 // Record a connectivity issue
 export const recordConnectivityIssue = (errorMessage: string): void => {
   try {
-    localStorage.setItem('cleantrack_conn_error', errorMessage);
-    localStorage.setItem('cleantrack_conn_time', Date.now().toString());
+    safeLocalStorage.setItem('cleantrack_conn_error', errorMessage);
+    safeLocalStorage.setItem('cleantrack_conn_time', Date.now().toString());
   } catch (err) {
     console.error('Failed to record connectivity issue:', err);
   }
@@ -140,8 +170,8 @@ export const recordConnectivityIssue = (errorMessage: string): void => {
 // Clear connectivity issue record
 export const clearConnectivityIssue = (): void => {
   try {
-    localStorage.removeItem('cleantrack_conn_error');
-    localStorage.removeItem('cleantrack_conn_time');
+    safeLocalStorage.removeItem('cleantrack_conn_error');
+    safeLocalStorage.removeItem('cleantrack_conn_time');
   } catch (err) {
     console.error('Failed to clear connectivity issue:', err);
   }

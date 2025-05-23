@@ -10,6 +10,13 @@ import { LoadingFallback } from '@/components/LoadingFallback';
 import { hasConnectivityIssues, isAfterCleanReload, clearConnectivityIssue } from '@/lib/cache-manager';
 import { supabase } from '@/lib/supabase';
 
+// Application version for diagnostic purposes
+const APP_VERSION = '1.0.1'; // Increment this when making significant changes
+
+// Log first render time for performance diagnostics
+console.log(`[App] Initializing CleanTrack app v${APP_VERSION} at ${new Date().toISOString()}`);
+const startTime = performance.now();
+
 // Lazy load pages to improve initial load time
 const HomepageLogin = lazy(() => import('@/pages/HomepageLogin'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -28,23 +35,31 @@ const Targets = lazy(() => import('@/pages/Targets'));
 const WaitingApproval = lazy(() => import('@/pages/WaitingApproval'));
 const ManageRoles = lazy(() => import('@/pages/ManageRoles'));
 
+// Import ThemeProvider
+import { ThemeProvider } from '@/contexts/theme-provider';
+
 function App() {
+  console.log(`[App] Rendering App component at ${new Date().toISOString()}`);
   const [isHealthy, setIsHealthy] = useState<boolean>(true);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   
   // Check Supabase connectivity
   useEffect(() => {
+    console.log('[App] Running connectivity check effect');
     let isMounted = true;
+    let intervalId: number | undefined;
     
     const checkConnectivity = async () => {
+      console.log('[App] Performing connectivity check');
       try {
         // Simple connectivity check
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Supabase connectivity check failed:', error);
+          console.error('[App] Supabase connectivity check failed:', error);
           if (isMounted) setIsHealthy(false);
         } else {
+          console.log('[App] Connectivity check successful');
           // Connection is good
           if (isMounted) {
             setIsHealthy(true);
@@ -53,27 +68,36 @@ function App() {
           }
         }
       } catch (err) {
-        console.error('Unexpected error during connectivity check:', err);
+        console.error('[App] Unexpected error during connectivity check:', err);
         if (isMounted) setIsHealthy(false);
       } finally {
-        if (isMounted) setIsInitialized(true);
+        if (isMounted) {
+          setIsInitialized(true);
+          console.log('[App] App initialized, health status:', isHealthy);
+        }
       }
     };
     
     // Check immediately on load
     checkConnectivity();
     
-    // Set up an interval to check periodically
-    const intervalId = setInterval(checkConnectivity, 30000); // every 30 seconds
+    // Set up an interval to check periodically - use window.setInterval for proper typing
+    intervalId = window.setInterval(checkConnectivity, 30000); // every 30 seconds
+    
+    // Log performance metrics
+    const loadTime = performance.now() - startTime;
+    console.log(`[App] Initial App render completed in ${loadTime.toFixed(2)}ms`);
     
     return () => {
+      console.log('[App] Cleaning up connectivity check effect');
       isMounted = false;
-      clearInterval(intervalId);
+      if (intervalId) window.clearInterval(intervalId);
     };
   }, []);
   
   // Show loading/error state
   if (!isInitialized) {
+    console.log('[App] App not yet initialized, showing loading screen');
     return (
       <LoadingFallback 
         message="Initializing application..."
@@ -85,6 +109,7 @@ function App() {
   
   // Show connectivity error
   if (!isHealthy || hasConnectivityIssues()) {
+    console.log('[App] App has connectivity issues, showing error screen');
     return (
       <LoadingFallback 
         message="Unable to connect to the server"
@@ -96,6 +121,7 @@ function App() {
   
   // Show that we're recovering from issues
   if (isAfterCleanReload()) {
+    console.log('[App] App recovering from clean reload');
     return (
       <LoadingFallback 
         message="Reinitialized successfully, loading application..."
@@ -105,6 +131,7 @@ function App() {
     );
   }
 
+  console.log('[App] Rendering main application content');
   return (
     <Suspense fallback={<LoadingFallback />}>
       <ThemeProvider defaultTheme="light" storageKey="cleantrack-theme">
@@ -256,16 +283,13 @@ function App() {
                   </div>
                 } />
               </Routes>
+              <Toaster />
             </AnnouncementsProvider>
-            <Toaster />
           </AuthProvider>
         </LoaderProvider>
       </ThemeProvider>
     </Suspense>
   );
 }
-
-// We need to import this after the App definition due to circular dependency
-import { ThemeProvider } from '@/contexts/theme-provider';
 
 export default App;

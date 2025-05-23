@@ -27,6 +27,7 @@ import { supabase } from "@/lib/supabase"
 import { targetHoursService } from "@/lib/services/target-hours-service"
 import bonusService from "@/lib/services/bonus-service"
 import "../styles/modern-dashboard.css"
+import { PageHeader } from "@/components/ui/PageHeader"
 
 // Sample data interfaces
 interface StatCardProps {
@@ -996,12 +997,10 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-layout dashboard-container space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <div className="text-sm text-muted-foreground">
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </div>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        showDate={true}
+      />
       
       {/* Render different dashboard based on user role */}
       {user?.role === "owner" || user?.role === "head_manager" 

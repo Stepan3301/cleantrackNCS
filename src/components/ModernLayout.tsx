@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, createContext, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ModernAppSidebar } from './ModernAppSidebar';
 import { MobileNavigation } from './MobileNavigation';
@@ -8,6 +8,18 @@ import { useLoader } from '@/contexts/loader-context';
 import '../styles/modern-buttons.css';
 import '../styles/mobile-responsive.css';
 
+// Create a context for mobile navigation state
+export const MobileNavContext = createContext<{
+  isDrawerOpen: boolean;
+  setIsDrawerOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}>({
+  isDrawerOpen: false,
+  setIsDrawerOpen: () => {},
+});
+
+// Hook to use the mobile nav context
+export const useMobileNav = () => useContext(MobileNavContext);
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -15,6 +27,7 @@ interface LayoutProps {
 const ModernLayout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const location = useLocation();
   const { showLoader, hideLoader } = useLoader();
   const [isFirstRender, setIsFirstRender] = useState(true);
@@ -113,26 +126,35 @@ const ModernLayout: React.FC<LayoutProps> = ({ children }) => {
     };
   }, [hideLoader]);
   
+  // Close drawer when route changes on mobile
+  useEffect(() => {
+    if (isMobile && isDrawerOpen) {
+      setIsDrawerOpen(false);
+    }
+  }, [location.pathname, isMobile]);
+  
   return (
-    <div className="flex h-screen">
-      {/* Desktop Sidebar */}
-      <ModernAppSidebar />
-      
-      {/* Mobile Navigation */}
-      <MobileNavigation />
-      
-      {/* Main content */}
-      <div 
-        className="flex-1 transition-all duration-300 flex flex-col overflow-y-auto"
-        style={{ 
-          marginLeft: isMobile ? '0' : (isSidebarCollapsed ? '64px' : '220px')
-        }}
-      >
-        <main className="flex-1 p-6">
-          {children}
-        </main>
+    <MobileNavContext.Provider value={{ isDrawerOpen, setIsDrawerOpen }}>
+      <div className="flex h-screen">
+        {/* Desktop Sidebar */}
+        <ModernAppSidebar />
+        
+        {/* Mobile Navigation */}
+        <MobileNavigation />
+        
+        {/* Main content */}
+        <div 
+          className="flex-1 transition-all duration-300 flex flex-col overflow-y-auto"
+          style={{ 
+            marginLeft: isMobile ? '0' : (isSidebarCollapsed ? '64px' : '220px')
+          }}
+        >
+          <main className="flex-1 p-6">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </MobileNavContext.Provider>
   );
 };
 

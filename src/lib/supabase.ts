@@ -14,11 +14,49 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 console.log(`🔍 Initializing Supabase client for URL: ${supabaseUrl?.substring(0, 20)}...`);
 
+// Safe localStorage access with proper error handling
+const safeStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return localStorage.getItem(key);
+    } catch (err) {
+      console.error(`Error getting item ${key} from localStorage:`, err);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (err) {
+      console.error(`Error setting item ${key} in localStorage:`, err);
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      localStorage.removeItem(key);
+    } catch (err) {
+      console.error(`Error removing item ${key} from localStorage:`, err);
+    }
+  },
+  clear: (): void => {
+    try {
+      // Only clear Supabase-related items, not the entire localStorage
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.') || key.startsWith('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (err) {
+      console.error('Error clearing localStorage:', err);
+    }
+  }
+};
+
 // Clear stale Supabase data on startup
 const clearStaleData = () => {
   try {
     // Get the last session time
-    const lastSessionTime = localStorage.getItem('supabase_session_timestamp');
+    const lastSessionTime = safeStorage.getItem('supabase_session_timestamp');
     if (lastSessionTime) {
       const lastTime = parseInt(lastSessionTime, 10);
       const now = Date.now();
@@ -28,13 +66,13 @@ const clearStaleData = () => {
         // Only clear Supabase-related items, not entire localStorage
         Object.keys(localStorage).forEach(key => {
           if (key.startsWith('supabase.') || key === 'supabase_session_timestamp') {
-            localStorage.removeItem(key);
+            safeStorage.removeItem(key);
           }
         });
       }
     }
     // Set the current timestamp
-    localStorage.setItem('supabase_session_timestamp', Date.now().toString());
+    safeStorage.setItem('supabase_session_timestamp', Date.now().toString());
   } catch (err) {
     console.error('Failed to clear stale session data:', err);
   }
@@ -42,7 +80,7 @@ const clearStaleData = () => {
 
 clearStaleData();
 
-// Create client with enhanced session handling
+// Create client with enhanced session handling and safety features
 export const supabase = createClient<Database>(
   supabaseUrl, 
   supabaseAnonKey, 
@@ -51,8 +89,8 @@ export const supabase = createClient<Database>(
       // Persist session in localStorage for better UX across page refreshes
       persistSession: true,
       
-      // Store auth in localStorage for offline capability
-      storage: localStorage,
+      // Use our safe localStorage wrapper to avoid errors
+      storage: safeStorage,
       
       // Auto refreshes the token before it expires
       autoRefreshToken: true,
@@ -60,16 +98,15 @@ export const supabase = createClient<Database>(
       // Detect session changes across tabs
       detectSessionInUrl: true,
       
-      // Flowbite UI uses hash-based routing
+      // Maximum retries for token refresh
       flowType: 'implicit'
     },
     // Optimize data fetching with proper cache control
     global: {
       headers: {
         // Use no-cache to ensure fresh data on each request
-        'Cache-Control': 'no-cache, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
       }
     },
     // Add retries for network issues

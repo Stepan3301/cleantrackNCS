@@ -13,6 +13,7 @@ import { ModernEmployeeFilters } from "@/components/employees/ModernEmployeeFilt
 import { ModernAddButton } from "@/components/employees/ModernAddButton"
 import { ModernEmployeeCard } from "@/components/employees/ModernEmployeeCard"
 import { initializeEmployeesPage } from "@/lib/employee-utils"
+import { PageHeader } from "@/components/ui/PageHeader"
 
 // Import the styles
 import "@/styles/modern-employees.css"
@@ -111,12 +112,11 @@ const Employees = () => {
   return (
     <>
       <div className="employees-container">
-        <div className="employees-header">
-          <div>
-            <h1>Employees</h1>
-            <p>Manage your CleanTrack team</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Employees"
+          subtitle="Manage your CleanTrack team"
+          showDate={false}
+        />
         
         <ModernEmployeeFilters
           selectedRole={selectedRole}

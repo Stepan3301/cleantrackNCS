@@ -64,14 +64,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [isLoading, setLoading]);
 
   // Helper function to clear any cached auth data that might be corrupted
-  const clearCachedAuthData = useCallback(() => {
+  const clearCachedAuthData = () => {
     try {
       console.log('Clearing cached auth data to ensure clean state...');
       // Only clear specific auth-related items
       const authKeys = ['supabase.auth.token', 'supabase.auth.refreshToken', 'sb-'];
       Object.keys(localStorage).forEach(key => {
         if (authKeys.some(prefix => key.startsWith(prefix))) {
-          localStorage.removeItem(key);
+          try {
+            localStorage.removeItem(key);
+          } catch (err) {
+            console.error(`Error removing ${key} from localStorage:`, err);
+          }
         }
       });
       return true;
@@ -79,7 +83,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.error('Error clearing cached auth data:', err);
       return false;
     }
-  }, []);
+  };
 
   useEffect(() => {
     let isMounted = true;

@@ -30,50 +30,105 @@
     </script>
     <!-- Service Worker Registration -->
     <script type="text/javascript">
-      // Register the Service Worker
+      // Unregister any existing service workers to prevent caching issues
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js')
-            .then(registration => {
-              console.log('Service Worker registered successfully:', registration.scope);
-            })
-            .catch(error => {
-              console.error('Service Worker registration failed:', error);
-            });
-        });
-
-        // Listen for messages from the Service Worker
-        navigator.serviceWorker.addEventListener('message', event => {
-          if (event.data && event.data.type === 'CACHE_CLEARED') {
-            console.log('Cache has been cleared by request');
-          }
-        });
-
-        // Force refresh on page load when needed
-        try {
-          // Check if we should force refresh
-          const lastRefresh = localStorage.getItem('last_forced_refresh');
-          const now = new Date().getTime();
-          // Force refresh once a day (86400000 ms)
-          if (!lastRefresh || (now - parseInt(lastRefresh, 10)) > 86400000) {
-            // Set timestamp first to prevent refresh loops
-            localStorage.setItem('last_forced_refresh', now.toString());
-            
-            // Clear service worker cache
-            navigator.serviceWorker.controller?.postMessage({
-              type: 'CLEAR_CACHE'
-            });
-            
-            // Only reload if not a fresh load
-            if (performance.navigation.type !== 1) { // type 1 is reload
-              console.log('Performing daily forced refresh for clean state');
-              // Use a delay to allow the cache clearing to complete
-              setTimeout(() => window.location.reload(true), 500);
+        window.addEventListener('load', async () => {
+          try {
+            // Get all service worker registrations and unregister them
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const registration of registrations) {
+              await registration.unregister();
+              console.log('Service Worker unregistered successfully');
             }
+            
+            // Add a helper for cache troubleshooting without service worker
+            window.clearAppCache = function() {
+              try {
+                // Clear cache storage
+                if ('caches' in window) {
+                  caches.keys().then(keyList => {
+                    return Promise.all(keyList.map(key => {
+                      return caches.delete(key);
+                    }));
+                  });
+                }
+                console.log('Cache cleared successfully');
+                return true;
+              } catch (err) {
+                console.error('Error clearing cache:', err);
+                return false;
+              }
+            };
+          } catch (error) {
+            console.error('Error unregistering Service Worker:', error);
           }
-        } catch (err) {
-          console.error('Error checking forced refresh:', err);
+        });
+      }
+
+      // Safe localStorage access with try/catch for all operations
+      // Check for storage availability first to prevent errors in private browsing
+      const safeStorage = {
+        isAvailable: function() {
+          try {
+            const testKey = '__test_key__';
+            localStorage.setItem(testKey, testKey);
+            localStorage.removeItem(testKey);
+            return true;
+          } catch (e) {
+            return false;
+          }
+        },
+        
+        getItem: function(key, defaultValue = null) {
+          try {
+            if (!this.isAvailable()) return defaultValue;
+            const value = localStorage.getItem(key);
+            return value !== null ? value : defaultValue;
+          } catch (e) {
+            console.error(`Error getting item ${key} from localStorage:`, e);
+            return defaultValue;
+          }
+        },
+        
+        setItem: function(key, value) {
+          try {
+            if (!this.isAvailable()) return false;
+            localStorage.setItem(key, value);
+            return true;
+          } catch (e) {
+            console.error(`Error setting item ${key} in localStorage:`, e);
+            return false;
+          }
+        },
+        
+        removeItem: function(key) {
+          try {
+            if (!this.isAvailable()) return false;
+            localStorage.removeItem(key);
+            return true;
+          } catch (e) {
+            console.error(`Error removing item ${key} from localStorage:`, e);
+            return false;
+          }
         }
+      };
+      
+      // Replace the forced refresh logic with a safer implementation
+      try {
+        // Check if we should force refresh - limit this to once per day
+        const lastRefresh = safeStorage.getItem('last_forced_refresh');
+        const now = new Date().getTime();
+        
+        // Force refresh once a day (86400000 ms)
+        if (!lastRefresh || (now - parseInt(lastRefresh, 10)) > 86400000) {
+          // Set timestamp first to prevent refresh loops
+          safeStorage.setItem('last_forced_refresh', now.toString());
+          
+          // Only clear cache, don't reload automatically
+          window.clearAppCache && window.clearAppCache();
+        }
+      } catch (err) {
+        console.error('Error checking forced refresh:', err);
       }
     </script>
     <!-- Force CSS reset -->
