@@ -25,18 +25,18 @@ export function ModernEmployeeCard({ employee, onClick }: ModernEmployeeCardProp
   // Get role color for visual indication
   const getRoleColorClass = (role: string) => {
     switch (role) {
-      case 'owner': return 'bg-purple-100 text-purple-600';
-      case 'head_manager': return 'bg-blue-100 text-blue-600';
-      case 'manager': return 'bg-indigo-100 text-indigo-600';
-      case 'supervisor': return 'bg-teal-100 text-teal-600';
-      case 'staff': return 'bg-sky-100 text-sky-600';
-      default: return 'bg-gray-100 text-gray-600';
+      case 'owner': return 'owner-role';
+      case 'head_manager': return 'head-manager-role';
+      case 'manager': return 'manager-role';
+      case 'supervisor': return 'supervisor-role';
+      case 'staff': return 'staff-role';
+      default: return '';
     }
   };
   
   return (
     <div 
-      className="employee-card bg-white rounded-lg p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 cursor-pointer"
+      className="employee-card"
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -46,21 +46,29 @@ export function ModernEmployeeCard({ employee, onClick }: ModernEmployeeCardProp
         }
       }}
     >
-      <div className="flex items-center gap-3">
-        <div className="employee-avatar w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold bg-primary/10 text-primary">
-          {initials}
+      <div className="employee-card-content">
+        <div className="employee-avatar">
+          {employee.avatar_url ? (
+            <img 
+              src={employee.avatar_url} 
+              alt={`${employee.name}'s profile`} 
+              className="w-full h-full object-cover rounded-full"
+            />
+          ) : (
+            <span>{initials}</span>
+          )}
         </div>
-        <div className="employee-info overflow-hidden">
-          <h3 className="employee-name text-base font-medium text-gray-800 truncate">{employee.name}</h3>
-          <p className="employee-email text-sm text-gray-500 truncate">{employee.email}</p>
-          <span className={`employee-role mt-1 inline-block px-2 py-0.5 text-xs rounded-full ${getRoleColorClass(employee.role)}`}>
+        
+        <div className="employee-info">
+          <h3 className="employee-name">{employee.name}</h3>
+          <p className="employee-email">{employee.email}</p>
+          <span className={`employee-role ${getRoleColorClass(employee.role)}`}>
             {getRoleDisplay(employee.role)}
           </span>
         </div>
       </div>
       
-      {/* Mobile touch hint - only visible on mobile */}
-      <div className="employee-card-touch-hint text-xs text-gray-400 mt-2 text-right show-on-mobile">
+      <div className="employee-view-details">
         Tap to view details
       </div>
     </div>

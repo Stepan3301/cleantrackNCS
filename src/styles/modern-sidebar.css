@@ -90,7 +90,7 @@
   transition: background 0.18s, color 0.18s, box-shadow 0.18s;
   position: relative;
   outline: none;
-  width: calc(100% - 24px); /* Ensure link stays within sidebar */
+  width: calc(100% - 16px); /* Adjusted width to prevent overflow */
   box-sizing: border-box;
   white-space: nowrap;
   overflow: hidden;
@@ -277,15 +277,17 @@
   }
   
   .sidebar-nav:hover .sidebar-link {
-    padding: 12px 24px 12px 32px;
+    padding: 12px 30px 12px 32px; /* Increased right padding */
     justify-content: flex-start;
     border-radius: 16px 0 0 16px;
     margin: 0;
+    width: calc(100% - 10px); /* Ensure no overflow in expanded state */
   }
   
   .sidebar-nav:hover .sidebar-link span {
     display: block;
     opacity: 1;
+    max-width: 160px; /* Ensure text fits in expanded sidebar */
   }
   
   .sidebar-nav:hover .sidebar-user {
@@ -333,11 +335,11 @@
 
 /* Ensure badges don't overflow */
 .sidebar-link span {
-  max-width: calc(100% - 40px); /* Account for icon width and gap */
+  max-width: calc(100% - 30px); /* Adjusted to provide more space for text */
   overflow: hidden;
   text-overflow: ellipsis;
-  display: flex;
-  align-items: center;
+  display: inline-block;
+  color: inherit; /* Ensure text color matches parent */
 }
 
 /* Fix badge alignment */
@@ -351,6 +353,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0; /* Prevent badge from shrinking */
+  position: absolute;
+  right: 16px;
 }
 
 /* Ensure badge container has proper layout */
@@ -358,8 +362,9 @@
 .sidebar-link span:has([class*="badge"]) {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
+  padding-right: 30px; /* Make room for badge */
+  position: relative;
+  max-width: 100%;
 }
 
 .sidebar-link .badge,
