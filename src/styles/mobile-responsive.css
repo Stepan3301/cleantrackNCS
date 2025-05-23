@@ -1,0 +1,340 @@
+/* ===== Mobile Responsive Optimization for Staff and Supervisors ===== */
+
+/* Base mobile styles */
+:root {
+  --mobile-header-height: 60px;
+  --mobile-footer-height: 60px;
+  --primary-color: #3ec6e0;
+  --accent-color: #7fffd4;
+  --text-color: #0a3d62;
+  --text-secondary: #4a6572;
+  --background-light: #f8fcfd;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --border-radius-sm: 8px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
+  --shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+/* ===== Mobile Layout Adjustments ===== */
+@media (max-width: 768px) {
+  /* Main layout adjustments */
+  .flex.h-screen {
+    flex-direction: column;
+    height: 100%;
+    min-height: 100vh;
+  }
+
+  /* Fix main content padding */
+  main {
+    padding: var(--spacing-md) !important;
+    margin-left: 0 !important;
+    margin-bottom: var(--mobile-footer-height) !important;
+    overflow-x: hidden;
+  }
+
+  /* Add some extra space at the bottom to account for mobile navigation */
+  main > div:last-child {
+    padding-bottom: var(--spacing-xl);
+  }
+
+  /* Grid layouts for better mobile display */
+  .grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--spacing-md) !important;
+  }
+
+  /* Card adjustments */
+  .card, 
+  .employee-card {
+    width: 100% !important;
+    margin-bottom: var(--spacing-md);
+  }
+
+  /* Prevent tables from overflowing */
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Dialog adjustments */
+  .modern-dialog,
+  .supervisor-dialog {
+    width: 95% !important;
+    max-width: 100% !important;
+    border-radius: var(--border-radius-md) !important;
+  }
+}
+
+/* ===== SIDEBAR MOBILE OPTIMIZATION ===== */
+@media (max-width: 768px) {
+  /* Hide the sidebar on mobile */
+  .sidebar-nav {
+    display: none !important;
+  }
+
+  /* Create a mobile bottom navigation */
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: var(--mobile-footer-height);
+    background: white;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 100;
+    padding: 0 var(--spacing-sm);
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.7rem;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--primary-color);
+    background-color: rgba(62, 198, 224, 0.1);
+  }
+
+  .mobile-nav-icon {
+    font-size: 1.4rem;
+    margin-bottom: 4px;
+  }
+
+  /* Mobile header */
+  .mobile-header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--mobile-header-height);
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing-md);
+    z-index: 99;
+  }
+
+  .mobile-header-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .mobile-user-menu {
+    position: relative;
+  }
+}
+
+/* ===== STAFF SPECIFIC OPTIMIZATIONS ===== */
+@media (max-width: 768px) {
+  /* Staff Hours View Optimizations */
+  .hours-entry-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .hours-calendar {
+    width: 100% !important;
+    margin-bottom: var(--spacing-md);
+  }
+
+  /* Make hours entry form more touch-friendly */
+  .hours-entry-form input,
+  .hours-entry-form textarea,
+  .hours-entry-form button {
+    min-height: 44px;
+    font-size: 16px !important; /* Prevent zoom on iOS */
+    margin-bottom: var(--spacing-md);
+  }
+
+  /* Staff Dashboard Optimizations */
+  .progress-container {
+    margin: var(--spacing-md) 0;
+  }
+
+  .record-details-view {
+    width: 100%;
+    padding: var(--spacing-md);
+  }
+
+  /* Request Leave Form Optimization */
+  .leave-request-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  /* Calendar optimization */
+  .calendar-container .fc {
+    font-size: 0.8rem;
+  }
+
+  .calendar-container .fc .fc-toolbar {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .calendar-container .fc .fc-toolbar-title {
+    font-size: 1.1rem;
+  }
+}
+
+/* ===== SUPERVISOR SPECIFIC OPTIMIZATIONS ===== */
+@media (max-width: 768px) {
+  /* Employee grid for supervisors */
+  .employee-grid {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: var(--spacing-md);
+  }
+
+  /* Employee cards touch optimization */
+  .employee-card {
+    cursor: pointer;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s;
+    min-height: 80px;
+  }
+
+  .employee-card:active {
+    transform: scale(0.98);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Touch-friendly employee filters */
+  .filter-container {
+    margin-bottom: var(--spacing-md);
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: var(--spacing-sm);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-item {
+    display: inline-block;
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-right: var(--spacing-sm);
+    background: rgba(62, 198, 224, 0.1);
+    border-radius: 50px;
+    font-size: 0.9rem;
+  }
+
+  /* Supervisor dialogs */
+  .supervisor-dialog .modern-employee-profile-header {
+    padding: var(--spacing-md) !important;
+  }
+
+  .supervisor-dialog .modern-employee-profile-avatar-placeholder {
+    width: 70px !important;
+    height: 70px !important;
+    font-size: 2rem !important;
+  }
+
+  /* Touch-friendly buttons for supervisor actions */
+  .supervisor-done-btn {
+    min-height: 44px;
+    width: 100%;
+    max-width: 200px;
+    font-size: 1rem !important;
+  }
+}
+
+/* ===== FORM ELEMENT OPTIMIZATIONS ===== */
+@media (max-width: 768px) {
+  /* Make all form elements more touch-friendly */
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    padding: var(--spacing-sm) var(--spacing-md) !important;
+  }
+
+  button {
+    min-height: 44px;
+  }
+
+  /* Date pickers and custom inputs */
+  .date-picker,
+  .custom-select {
+    width: 100%;
+  }
+
+  /* Fix date picker calendar size */
+  .rdp {
+    width: 100% !important;
+  }
+
+  .rdp-table {
+    width: 100%;
+  }
+
+  .rdp-cell, .rdp-head_cell {
+    padding: 8px 0;
+  }
+}
+
+/* ===== UTILITY CLASSES FOR MOBILE ===== */
+@media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  .show-on-mobile {
+    display: block !important;
+  }
+
+  .mobile-full-width {
+    width: 100% !important;
+  }
+
+  .mobile-text-center {
+    text-align: center !important;
+  }
+
+  .mobile-pt {
+    padding-top: var(--spacing-md) !important;
+  }
+
+  .mobile-pb {
+    padding-bottom: var(--spacing-md) !important;
+  }
+
+  .mobile-px {
+    padding-left: var(--spacing-md) !important;
+    padding-right: var(--spacing-md) !important;
+  }
+
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+
+  .mobile-stack > * {
+    width: 100% !important;
+    margin-bottom: var(--spacing-md) !important;
+  }
+} 

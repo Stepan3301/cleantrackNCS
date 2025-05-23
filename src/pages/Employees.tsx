@@ -1,12 +1,21 @@
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
-import { UserPlus } from "lucide-react"
-import { EmployeeGrid } from "@/components/employees/EmployeeGrid"
+
+// Original components
 import { EmployeeDetails } from "@/components/employees/EmployeeDetails"
 import { DeactivateConfirmation } from "@/components/employees/DeactivateConfirmation"
-import { EmployeeFilters } from "@/components/employees/EmployeeFilters"
+import { AddEmployeeDialog } from "@/components/employees/AddEmployeeDialog"
+import { AssignmentDialog } from "@/components/employees/AssignmentDialog"
+
+// Modern components
+import { ModernEmployeeGrid } from "@/components/employees/ModernEmployeeGrid"
+import { ModernEmployeeFilters } from "@/components/employees/ModernEmployeeFilters"
+import { ModernAddButton } from "@/components/employees/ModernAddButton"
+import { ModernEmployeeCard } from "@/components/employees/ModernEmployeeCard"
+import { initializeEmployeesPage } from "@/lib/employee-utils"
+
+// Import the styles
+import "@/styles/modern-employees.css"
 
 const Employees = () => {
   const { user, users, canUserManage, deactivateUser } = useAuth()
@@ -14,14 +23,35 @@ const Employees = () => {
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null)
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
+  const [showAddEmployeeDialog, setShowAddEmployeeDialog] = useState(false)
+  const [showAssignmentDialog, setShowAssignmentDialog] = useState(false)
   
+  // Initialize the modern employees page
+  useEffect(() => {
+    const cleanup = initializeEmployeesPage();
+    return cleanup;
+  }, []);
+  
+  // Check user roles for permissions
   const isOwnerOrHeadManager = user?.role === "owner" || user?.role === "head_manager"
+  const isManager = user?.role === "manager"
+  const isSupervisor = user?.role === "supervisor"
   
   // Filter visible employees based on user role hierarchy and search/role filters
   const visibleEmployees = users
     .filter(employee => {
       if (employee.id === user?.id) return false
-      return canUserManage(user, employee.id)
+      
+      // Owner and Head Manager can see everyone
+      if (isOwnerOrHeadManager) return true
+      
+      // Manager can see supervisors and staff
+      if (isManager && (employee.role === "supervisor" || employee.role === "staff")) return true
+      
+      // Supervisor can only see other supervisors and staff (no management)
+      if (isSupervisor && (employee.role === "supervisor" || employee.role === "staff")) return true
+      
+      return false
     })
     .filter(employee => {
       const matchesSearch = employee.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -39,29 +69,73 @@ const Employees = () => {
     }
   }
 
+  // Check if user can assign staff to supervisor
+  const canAssignEmployee = (employee: any) => {
+    // Owner and Head Manager can assign anyone
+    if (isOwnerOrHeadManager) return true;
+    
+    // Manager can assign supervisors to themselves or staff to supervisors
+    if (isManager) {
+      if (employee.role === "supervisor") return true;
+      if (employee.role === "staff") return true;
+    }
+    
+    return false;
+  }
+
+  // Check if user can add employees
+  const canAddEmployee = isOwnerOrHeadManager || isManager;
+  
+  // Check if user can deactivate employees
+  const canDeactivateEmployee = (employee: any) => {
+    // Owner and Head Manager can deactivate anyone
+    if (isOwnerOrHeadManager) return true;
+    
+    // Manager can deactivate supervisors and staff
+    if (isManager && (employee.role === "supervisor" || employee.role === "staff")) return true;
+    
+    return false;
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Employee Database</h1>
-        {isOwnerOrHeadManager && (
-          <Button>
-            <UserPlus size={16} className="mr-2" />
-            Add New Employee
-          </Button>
-        )}
+    <>
+      <div className="employees-container">
+        <div className="employees-header">
+          <div>
+            <h1>Employees</h1>
+            <p>Manage your CleanTrack team</p>
+          </div>
+        </div>
+        
+        <ModernEmployeeFilters
+          searchQuery={searchQuery}
+          selectedRole={selectedRole}
+          onSearchChange={setSearchQuery}
+          onRoleChange={setSelectedRole}
+          showManagerFilter={isOwnerOrHeadManager}
+          userRole={user?.role}
+        />
+        
+        <div className="employees-grid" id="employeesGrid">
+          {visibleEmployees.length === 0 ? (
+            <div className="employee-grid-empty">
+              <p>No employees found</p>
+            </div>
+          ) : (
+            visibleEmployees.map((employee) => (
+              <ModernEmployeeCard
+                key={employee.id}
+                employee={employee}
+                onClick={() => setSelectedEmployee(employee)}
+              />
+            ))
+          )}
+        </div>
       </div>
       
-      <EmployeeFilters
-        searchQuery={searchQuery}
-        selectedRole={selectedRole}
-        onSearchChange={setSearchQuery}
-        onRoleChange={setSelectedRole}
-      />
-      
-      <EmployeeGrid
-        employees={visibleEmployees}
-        onSelectEmployee={setSelectedEmployee}
-      />
+      {canAddEmployee && (
+        <ModernAddButton onClick={() => setShowAddEmployeeDialog(true)} />
+      )}
       
       {selectedEmployee && (
         <EmployeeDetails
@@ -69,7 +143,9 @@ const Employees = () => {
           isOpen={!!selectedEmployee}
           onClose={() => setSelectedEmployee(null)}
           onDeactivate={() => setShowDeactivateDialog(true)}
-          showDeactivateOption={isOwnerOrHeadManager}
+          showDeactivateOption={canDeactivateEmployee(selectedEmployee)}
+          showAssignOption={canAssignEmployee(selectedEmployee)}
+          onAssign={() => setShowAssignmentDialog(true)}
         />
       )}
       
@@ -81,7 +157,20 @@ const Employees = () => {
           onConfirm={handleDeactivateConfirm}
         />
       )}
-    </div>
+      
+      <AddEmployeeDialog
+        isOpen={showAddEmployeeDialog}
+        onClose={() => setShowAddEmployeeDialog(false)}
+      />
+      
+      {selectedEmployee && (
+        <AssignmentDialog
+          isOpen={showAssignmentDialog}
+          employee={selectedEmployee}
+          onClose={() => setShowAssignmentDialog(false)}
+        />
+      )}
+    </>
   )
 }
 

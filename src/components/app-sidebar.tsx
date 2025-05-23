@@ -1,4 +1,3 @@
-
 import {
   Sidebar,
   SidebarContent,
@@ -17,17 +16,22 @@ import {
   LayoutDashboard, 
   Users, 
   CalendarDays, 
-  BarChart3, 
   Settings, 
   LogOut,
-  FileText,
-  Megaphone
+  Megaphone,
+  Target,
+  UserPlus,
+  DollarSign
 } from "lucide-react"
+import { useEffect, useState } from "react"
+import { registrationRequestsService } from "@/lib/services/registration-requests-service"
+import { Badge } from "@/components/ui/badge"
 
 export function AppSidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
   
   // If no user (not logged in), don't show the sidebar
   if (!user) return null
@@ -37,6 +41,28 @@ export function AppSidebar() {
   const showHeadManagerContent = ["owner", "head_manager"].includes(user.role)
   const showManagerContent = ["owner", "head_manager", "manager"].includes(user.role)
   const showSupervisorContent = ["owner", "head_manager", "manager", "supervisor"].includes(user.role)
+  const showStaffContent = ["staff", "supervisor"].includes(user.role)
+
+  // Fetch pending registration requests count for managers and above
+  useEffect(() => {
+    if (showManagerContent) {
+      const fetchPendingRequestsCount = async () => {
+        try {
+          const pendingRequests = await registrationRequestsService.getPendingRequests()
+          setPendingRequestsCount(pendingRequests.length)
+        } catch (error) {
+          console.error("Error fetching pending requests count:", error)
+        }
+      }
+      
+      fetchPendingRequestsCount()
+      
+      // Set up interval to check for new requests every minute
+      const interval = setInterval(fetchPendingRequestsCount, 60000)
+      
+      return () => clearInterval(interval)
+    }
+  }, [showManagerContent])
 
   return (
     <Sidebar>
@@ -78,6 +104,25 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
               
+              {/* Registration Requests - For managers and up */}
+              {showManagerContent && (
+                <SidebarMenuItem active={location.pathname === "/registration-requests"}>
+                  <SidebarMenuButton
+                    onClick={() => navigate("/registration-requests")}
+                  >
+                    <UserPlus size={18} />
+                    <div className="flex items-center justify-between w-full">
+                      <span>Registration Requests</span>
+                      {pendingRequestsCount > 0 && (
+                        <Badge variant="destructive" className="ml-2 px-1.5 py-0.5 h-5 min-w-[1.25rem] flex items-center justify-center">
+                          {pendingRequestsCount}
+                        </Badge>
+                      )}
+                    </div>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              
               {/* Calendar/Hours - For all users */}
               <SidebarMenuItem active={location.pathname === "/hours"}>
                 <SidebarMenuButton
@@ -88,14 +133,14 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
-              {/* Orders - For head managers and owners */}
-              {showHeadManagerContent && (
-                <SidebarMenuItem active={location.pathname === "/orders"}>
+              {/* Bonuses - For managers and up */}
+              {showManagerContent && (
+                <SidebarMenuItem active={location.pathname === "/bonuses"}>
                   <SidebarMenuButton
-                    onClick={() => navigate("/orders")}
+                    onClick={() => navigate("/bonuses")}
                   >
-                    <FileText size={18} />
-                    <span>Orders</span>
+                    <DollarSign size={18} />
+                    <span>Bonuses</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
@@ -112,14 +157,14 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
               
-              {/* Analytics - For managers and up */}
+              {/* Targets - For managers and up */}
               {showManagerContent && (
-                <SidebarMenuItem active={location.pathname === "/analytics"}>
+                <SidebarMenuItem active={location.pathname === "/targets"}>
                   <SidebarMenuButton
-                    onClick={() => navigate("/analytics")}
+                    onClick={() => navigate("/targets")}
                   >
-                    <BarChart3 size={18} />
-                    <span>Analytics</span>
+                    <Target size={18} />
+                    <span>Target Hours</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}

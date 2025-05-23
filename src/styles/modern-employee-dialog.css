@@ -1,0 +1,791 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+/* Modern Employee Dialog Styles */
+.modern-dialog {
+  --dialog-primary: #3ec6e0;
+  --dialog-accent: #7fffd4;
+  --dialog-gradient: linear-gradient(135deg, var(--dialog-primary), var(--dialog-accent));
+  --dialog-bg: rgba(255, 255, 255, 0.95);
+  --dialog-border: rgba(62, 198, 224, 0.15);
+  --dialog-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  --dialog-text: #333;
+  --dialog-muted: #7b8a8b;
+  --dialog-input-bg: rgba(240, 248, 255, 0.7);
+  --dialog-input-border: rgba(62, 198, 224, 0.2);
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Dialog Container */
+.modern-dialog [data-radix-dialog-content] {
+  background: var(--dialog-bg);
+  border-radius: 20px;
+  border: 1px solid var(--dialog-border);
+  box-shadow: var(--dialog-shadow);
+  backdrop-filter: blur(10px);
+  max-width: 500px !important;
+  animation: dialogSlideIn 0.3s ease-out;
+  padding: 28px 24px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  margin: 0 auto !important;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@keyframes dialogSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -55%) scale(1);
+  }
+}
+
+/* Dialog Header */
+.modern-dialog [data-radix-dialog-title] {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--dialog-primary);
+  margin-bottom: 4px;
+  text-align: center;
+  position: relative;
+  padding-bottom: 16px;
+}
+
+.modern-dialog [data-radix-dialog-title]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: var(--dialog-gradient);
+  border-radius: 3px;
+}
+
+/* Form Fields */
+.modern-dialog .form-item {
+  margin-bottom: 20px;
+}
+
+.modern-dialog .form-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--dialog-text);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.modern-dialog .form-control {
+  width: 100%;
+}
+
+/* Input Fields */
+.modern-dialog input:not([type="radio"]):not([type="checkbox"]) {
+  background: var(--dialog-input-bg);
+  border: 1px solid var(--dialog-input-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  color: var(--dialog-text);
+  transition: all 0.2s ease;
+  width: 100%;
+  font-family: 'Montserrat', sans-serif;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+}
+
+.modern-dialog input:focus {
+  border-color: var(--dialog-primary);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(62, 198, 224, 0.15);
+  outline: none;
+}
+
+/* Select Field */
+.modern-dialog [data-radix-select-trigger] {
+  background: var(--dialog-input-bg);
+  border: 1px solid var(--dialog-input-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  color: var(--dialog-text);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+}
+
+.modern-dialog [data-radix-select-trigger]:focus {
+  border-color: var(--dialog-primary);
+  box-shadow: 0 0 0 3px rgba(62, 198, 224, 0.15);
+}
+
+.modern-dialog [data-radix-select-content] {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--dialog-input-border);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  z-index: 999;
+}
+
+.modern-dialog [data-radix-select-item] {
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  color: var(--dialog-text);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.modern-dialog [data-radix-select-item]:hover,
+.modern-dialog [data-radix-select-item]:focus {
+  background: rgba(62, 198, 224, 0.1);
+}
+
+.modern-dialog [data-radix-select-item][data-state="checked"] {
+  background: rgba(62, 198, 224, 0.15);
+  color: var(--dialog-primary);
+  font-weight: 500;
+}
+
+/* Calendar & Date Picker */
+.modern-dialog [data-radix-popover-content] {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid var(--dialog-input-border);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 999;
+}
+
+.modern-dialog .rdp {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.modern-dialog .rdp-months {
+  padding: 8px;
+}
+
+.modern-dialog .rdp-month {
+  background: white;
+  border-radius: 12px;
+}
+
+.modern-dialog .rdp-caption {
+  padding: 12px 8px;
+  background: linear-gradient(to right, rgba(62, 198, 224, 0.08), rgba(127, 255, 212, 0.08));
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.modern-dialog .rdp-caption_label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--dialog-primary);
+}
+
+.modern-dialog .rdp-head_cell {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--dialog-muted);
+  padding: 10px 0;
+}
+
+.modern-dialog .rdp-button {
+  border-radius: 8px;
+  font-size: 0.9rem;
+  padding: 0;
+  height: 38px;
+  width: 38px;
+  margin: 2px;
+  transition: all 0.2s;
+}
+
+.modern-dialog .rdp-day_today {
+  background: rgba(62, 198, 224, 0.15);
+  color: var(--dialog-primary);
+  font-weight: 500;
+}
+
+.modern-dialog .rdp-day_selected {
+  background: var(--dialog-gradient) !important;
+  color: white !important;
+  font-weight: 600;
+}
+
+.modern-dialog .rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+  background: rgba(62, 198, 224, 0.1);
+}
+
+.modern-dialog .rdp-nav_button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: white;
+  border: 1px solid var(--dialog-input-border);
+  color: var(--dialog-primary);
+}
+
+.modern-dialog .rdp-nav_button:hover {
+  background: rgba(62, 198, 224, 0.1);
+}
+
+/* Buttons */
+.modern-dialog [data-radix-dialog-footer] {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.modern-dialog .dialog-btn-cancel {
+  background: rgba(240, 248, 255, 0.7);
+  border: 1px solid var(--dialog-input-border);
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--dialog-muted);
+  transition: all 0.2s;
+}
+
+.modern-dialog .dialog-btn-cancel:hover {
+  background: rgba(240, 248, 255, 0.9);
+  color: var(--dialog-text);
+}
+
+.modern-dialog .dialog-btn-submit {
+  background: var(--dialog-gradient);
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(62, 198, 224, 0.2);
+}
+
+.modern-dialog .dialog-btn-submit:hover {
+  box-shadow: 0 6px 15px rgba(62, 198, 224, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Enhanced Calendar Styling */
+.rdp-caption_dropdowns {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.rdp-dropdown_month,
+.rdp-dropdown_year {
+  font-family: 'Montserrat', sans-serif;
+  background: var(--dialog-input-bg);
+  border: 1px solid var(--dialog-input-border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.95rem;
+  color: var(--dialog-primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+  min-width: 110px;
+  text-align: center;
+}
+
+.rdp-dropdown_month:focus,
+.rdp-dropdown_year:focus {
+  border-color: var(--dialog-primary);
+  box-shadow: 0 0 0 2px rgba(62, 198, 224, 0.2);
+}
+
+.rdp-dropdown_icon {
+  color: var(--dialog-primary);
+}
+
+.modern-dialog .rdp-month {
+  padding: 8px;
+}
+
+.modern-dialog .rdp-table {
+  border-spacing: 4px;
+  margin: 0 auto;
+}
+
+.modern-dialog .rdp-head_cell {
+  font-weight: 600;
+  color: var(--dialog-primary);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.modern-dialog .rdp-day {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+  font-weight: 500;
+  z-index: 1;
+}
+
+.modern-dialog .rdp-day::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--dialog-gradient);
+  top: 0;
+  left: 0;
+  z-index: -1;
+  opacity: 0;
+  transform: scale(0);
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+.modern-dialog .rdp-day:not(.rdp-day_selected):hover::before {
+  opacity: 0.1;
+  transform: scale(1);
+}
+
+.modern-dialog .rdp-day_selected::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.modern-dialog .rdp-day_selected {
+  color: white;
+  font-weight: 600;
+}
+
+.modern-dialog .rdp-day_outside {
+  opacity: 0.4;
+}
+
+/* Animation for dialog appearance */
+.modern-dialog[class*="visible"] {
+  animation: dialogAppear 0.3s ease-out forwards;
+}
+
+@keyframes dialogAppear {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -55%) scale(1);
+  }
+}
+
+/* Animation for dialog exit */
+.modern-dialog:not([class*="visible"]) {
+  animation: dialogExit 0.2s ease-out forwards;
+}
+
+@keyframes dialogExit {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -55%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+}
+
+/* Date picker button */
+.modern-dialog .date-picker-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--dialog-input-bg);
+  border: 1px solid var(--dialog-input-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  color: var(--dialog-text);
+  transition: all 0.2s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+}
+
+.modern-dialog .date-picker-button:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--dialog-input-border);
+}
+
+.modern-dialog .date-picker-button:focus {
+  border-color: var(--dialog-primary);
+  box-shadow: 0 0 0 3px rgba(62, 198, 224, 0.15);
+  outline: none;
+}
+
+.modern-dialog .date-picker-button svg {
+  color: var(--dialog-primary);
+}
+
+/* Form message styling */
+.modern-dialog [role="alert"] {
+  font-size: 0.8rem;
+  color: #ef4444;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.modern-dialog [role="alert"]::before {
+  content: '⚠️';
+  font-size: 0.9rem;
+}
+
+/* Apply transition to inputs */
+.modern-dialog input,
+.modern-dialog [data-radix-select-trigger],
+.modern-dialog button {
+  transition: all 0.2s ease-out;
+}
+
+.modern-dialog input:focus,
+.modern-dialog [data-radix-select-trigger]:focus,
+.modern-dialog button:focus {
+  transform: translateY(-1px);
+}
+
+/* Dialog Overlay */
+[data-radix-dialog-overlay] {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  animation: overlayShow 0.25s ease-out;
+}
+
+@keyframes overlayShow {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modern Add Employee Dialog Styles */
+.add-employee-bubbles {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+.add-employee-bubbles .bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--dialog-primary), var(--dialog-accent));
+  opacity: 0.13;
+  animation: float 16s infinite ease-in-out;
+}
+.add-employee-bubbles .bubble:nth-child(1) { width: 120px; height: 120px; left: 8vw; top: 70vh; animation-delay: 0s;}
+.add-employee-bubbles .bubble:nth-child(2) { width: 80px; height: 80px; left: 80vw; top: 12vh; animation-delay: 3s;}
+@keyframes float {
+  0% { transform: translateY(0) scale(1);}
+  50% { transform: translateY(-40px) scale(1.08);}
+  100% { transform: translateY(0) scale(1);}
+}
+
+.modern-dialog.add-employee-dialog [data-radix-dialog-content] {
+  background: var(--dialog-bg);
+  border-radius: 24px;
+  box-shadow: var(--dialog-shadow);
+  border: 1.5px solid var(--dialog-border);
+  backdrop-filter: blur(14px);
+  padding: 38px 32px 28px 32px;
+  max-width: 580px !important;
+  animation: popIn 0.7s cubic-bezier(.68,-0.55,.27,1.55);
+  transform: none !important;
+  position: relative;
+  left: auto;
+  top: auto;
+  margin: 60px auto !important;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.95) !important;}
+  to { opacity: 1; transform: scale(1) !important;}
+}
+
+.add-employee-dialog [data-radix-dialog-title] {
+  color: var(--dialog-primary);
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 20px;
+  text-align: center;
+  letter-spacing: 1px;
+  padding-bottom: 0;
+}
+
+.add-employee-dialog [data-radix-dialog-title]::after {
+  width: 80px;
+  height: 3px;
+  bottom: -10px;
+}
+
+.add-employee-dialog .form-row {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+
+.add-employee-dialog .form-item {
+  flex: 1 1 220px;
+  min-width: 0;
+  margin-bottom: 18px;
+}
+
+.add-employee-dialog .form-item.full {
+  flex: 1 1 100%;
+}
+
+.add-employee-dialog .form-label {
+  color: #7ec6c6;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 7px;
+  letter-spacing: 0.2px;
+}
+
+.add-employee-dialog input:not([type="radio"]):not([type="checkbox"]) {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255,255,255,0.7);
+  font-size: 1rem;
+  color: var(--dialog-text);
+  box-shadow: 0 1px 4px 0 rgba(62,198,224,0.08);
+  transition: background 0.2s, transform 0.2s;
+  outline: none;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.add-employee-dialog input:focus {
+  background: #e0f7fa;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px 0 rgba(62,198,224,0.15);
+}
+
+.add-employee-dialog [data-radix-select-trigger] {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.7);
+  box-shadow: 0 1px 4px 0 rgba(62,198,224,0.08);
+  transition: background 0.2s, transform 0.2s;
+}
+
+.add-employee-dialog [data-radix-select-trigger]:focus {
+  background: #e0f7fa;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px 0 rgba(62,198,224,0.15);
+}
+
+.add-employee-dialog [data-radix-select-content] {
+  background: rgba(255,255,255,0.95);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px 0 rgba(62,198,224,0.13);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(62,198,224,0.1);
+  animation: selectDrop 0.25s;
+}
+
+@keyframes selectDrop {
+  from { opacity: 0; transform: translateY(-10px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+
+.add-employee-dialog [data-radix-select-item] {
+  padding: 12px 16px;
+  transition: background 0.18s, color 0.18s;
+  border-radius: 8px;
+  margin: 2px 4px;
+}
+
+.add-employee-dialog [data-radix-select-item]:hover,
+.add-employee-dialog [data-radix-select-item]:focus {
+  background: #e0f7fa;
+  color: #222;
+}
+
+/* Date picker button */
+.add-employee-dialog .date-picker-button {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255,255,255,0.7);
+  font-size: 1rem;
+  color: var(--dialog-text);
+  box-shadow: 0 1px 4px 0 rgba(62,198,224,0.08);
+  transition: background 0.2s, transform 0.2s;
+}
+
+.add-employee-dialog .date-picker-button:hover,
+.add-employee-dialog .date-picker-button:focus {
+  background: #e0f7fa;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px 0 rgba(62,198,224,0.15);
+}
+
+/* Enhanced calendar for date picker */
+.add-employee-dialog [data-radix-popover-content] {
+  background: rgba(255,255,255,0.98);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px 0 rgba(62,198,224,0.13);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(62,198,224,0.1);
+  animation: popIn 0.2s;
+  min-width: 260px;
+}
+
+.add-employee-dialog .rdp-months {
+  padding: 16px 18px;
+}
+
+.add-employee-dialog .rdp-caption {
+  background: linear-gradient(to right, rgba(62, 198, 224, 0.08), rgba(127, 255, 212, 0.08));
+  padding: 12px 8px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.add-employee-dialog .rdp-caption_dropdowns {
+  gap: 8px;
+}
+
+.add-employee-dialog .rdp-dropdown_month,
+.add-employee-dialog .rdp-dropdown_year {
+  background: rgba(255,255,255,0.7);
+  border-radius: 8px;
+  border: none;
+  padding: 6px 12px;
+  color: var(--dialog-primary);
+  box-shadow: 0 1px 4px 0 rgba(62,198,224,0.08);
+  transition: background 0.2s, color 0.2s;
+  cursor: pointer;
+}
+
+.add-employee-dialog .rdp-dropdown_month:focus,
+.add-employee-dialog .rdp-dropdown_year:focus {
+  background: #e0f7fa;
+  color: #222;
+}
+
+.add-employee-dialog .rdp-head_cell {
+  color: #7ec6c6;
+  font-weight: 600;
+  padding: 8px 0;
+}
+
+.add-employee-dialog .rdp-day {
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+  color: var(--dialog-primary);
+  font-weight: 700;
+}
+
+.add-employee-dialog .rdp-day:hover:not([disabled]):not(.rdp-day_selected) {
+  background: #e0f7fa;
+  transform: scale(1.1);
+}
+
+.add-employee-dialog .rdp-day_today {
+  border: 1.5px solid var(--dialog-primary);
+}
+
+.add-employee-dialog .rdp-day_selected {
+  background: var(--dialog-gradient) !important;
+  color: white !important;
+  box-shadow: 0 3px 8px 0 rgba(62,198,224,0.2);
+  transform: scale(1.1);
+}
+
+/* Dialog Footer Buttons */
+.add-employee-dialog [data-radix-dialog-footer] {
+  display: flex;
+  justify-content: flex-end;
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.add-employee-dialog .dialog-btn-cancel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  font-size: 1.08rem;
+  font-weight: 700;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--dialog-primary);
+  border: 1.5px solid var(--dialog-primary);
+  box-shadow: 0 2px 12px 0 rgba(62,198,224,0.1);
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.1s;
+}
+
+.add-employee-dialog .dialog-btn-cancel:hover,
+.add-employee-dialog .dialog-btn-cancel:focus {
+  background: #e0f7fa;
+  color: #222;
+  transform: translateY(-2px);
+}
+
+.add-employee-dialog .dialog-btn-submit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  font-size: 1.08rem;
+  font-weight: 700;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #43e97b 0%, #3ec6e0 100%);
+  color: #fff;
+  box-shadow: 0 2px 12px 0 rgba(62,198,224,0.13);
+  transition: background 0.18s, box-shadow 0.18s, transform 0.1s;
+}
+
+.add-employee-dialog .dialog-btn-submit:hover,
+.add-employee-dialog .dialog-btn-submit:focus {
+  background: linear-gradient(135deg, #3ec6e0 0%, #43e97b 100%);
+  box-shadow: 0 4px 18px 0 rgba(67,233,123,0.33);
+  transform: scale(1.04) translateY(-2px);
+}
+
+/* Add SVG icons to buttons */
+.add-employee-dialog .dialog-btn-cancel::before,
+.add-employee-dialog .dialog-btn-submit::before {
+  content: '';
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.add-employee-dialog .dialog-btn-cancel::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233ec6e0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 4v6h6'/%3E%3Cpath d='M20 20v-6h-6'/%3E%3Cpath d='M5 19A9 9 0 0 1 19 5'/%3E%3C/svg%3E");
+}
+
+.add-employee-dialog .dialog-btn-submit::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13l4 4L19 7'/%3E%3C/svg%3E");
+} 

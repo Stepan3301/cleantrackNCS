@@ -1,0 +1,213 @@
+/* Modern Roles Management Page Styling */
+
+:root {
+  --roles-primary: #3ec6e0;
+  --roles-secondary: #7fffd4;
+  --roles-gradient: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+  --roles-card-bg: rgba(255, 255, 255, 0.95);
+  --roles-card-border: rgba(62, 198, 224, 0.25);
+  --roles-card-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+  --roles-header-bg: linear-gradient(135deg, #f6fdff 0%, #e0f7fa 100%);
+  --roles-text: #222;
+  --roles-muted: #78909c;
+  --roles-hover: rgba(62, 198, 224, 0.1);
+  --roles-success: #43e97b;
+  --roles-warning: #ffab40;
+  --roles-error: #ff6b6b;
+}
+
+/* Main container styling - only for the roles page */
+.container.roles-page-container {
+  max-width: 100% !important;
+  padding: 0 1.5rem;
+}
+
+/* Header section */
+.roles-page-header {
+  background: var(--roles-header-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--roles-card-border);
+  position: relative;
+  box-shadow: var(--roles-card-shadow);
+}
+
+.roles-title {
+  font-size: 2rem;
+  color: var(--roles-primary);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.roles-subtitle {
+  color: var(--roles-muted);
+  font-size: 1rem;
+  max-width: 80%;
+}
+
+/* Search section */
+.roles-search-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid var(--roles-card-border);
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.roles-search-input {
+  border: 1px solid rgba(62, 198, 224, 0.3);
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(62, 198, 224, 0.05);
+  transition: all 0.2s ease;
+}
+
+.roles-search-input:focus {
+  border-color: var(--roles-primary);
+  box-shadow: 0 0 0 3px rgba(62, 198, 224, 0.15);
+}
+
+/* Content container */
+.roles-content-container {
+  background: var(--roles-card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--roles-card-border);
+  overflow: hidden;
+  box-shadow: var(--roles-card-shadow);
+}
+
+/* Table styling */
+.roles-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.roles-table th {
+  background: var(--roles-header-bg);
+  color: var(--roles-primary);
+  font-weight: 600;
+  padding: 1rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--roles-card-border);
+}
+
+.roles-table tr {
+  border-bottom: 1px solid rgba(62, 198, 224, 0.1);
+  transition: background-color 0.2s;
+}
+
+.roles-table tr:hover {
+  background-color: var(--roles-hover);
+}
+
+.roles-table td {
+  padding: 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(62, 198, 224, 0.1);
+}
+
+/* Role badges */
+.role-badge {
+  background: linear-gradient(135deg, rgba(62, 198, 224, 0.15), rgba(127, 255, 212, 0.15));
+  color: var(--roles-primary);
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 0.4rem 1rem;
+  display: inline-block;
+  font-size: 0.85rem;
+  border: 1px solid rgba(62, 198, 224, 0.2);
+  box-shadow: 0 2px 4px rgba(62, 198, 224, 0.05);
+}
+
+/* Status badges */
+.status-badge-active {
+  background: rgba(67, 233, 123, 0.1);
+  color: var(--roles-success);
+  border: 1px solid rgba(67, 233, 123, 0.2);
+}
+
+.status-badge-inactive {
+  background: rgba(255, 107, 107, 0.1);
+  color: var(--roles-error);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
+.status-badge-pending {
+  background: rgba(255, 171, 64, 0.1);
+  color: var(--roles-warning);
+  border: 1px solid rgba(255, 171, 64, 0.2);
+}
+
+/* Buttons */
+.roles-button {
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.roles-button-change {
+  background: rgba(62, 198, 224, 0.1);
+  color: var(--roles-primary);
+  border: 1px solid rgba(62, 198, 224, 0.3);
+}
+
+.roles-button-change:hover:not(:disabled) {
+  background: var(--roles-primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(62, 198, 224, 0.25);
+}
+
+.roles-button-history {
+  background: transparent;
+  color: var(--roles-muted);
+}
+
+.roles-button-history:hover {
+  background: rgba(120, 144, 156, 0.1);
+  color: var(--roles-text);
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Empty state */
+.roles-empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--roles-muted);
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .roles-container {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+  
+  .roles-header {
+    padding: 1rem;
+  }
+  
+  .roles-title {
+    font-size: 1.5rem;
+  }
+  
+  .roles-subtitle {
+    max-width: 100%;
+  }
+} 

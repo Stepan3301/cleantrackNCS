@@ -1,0 +1,476 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
+:root {
+  --btn-primary-bg: linear-gradient(90deg, #00b4d8 0%, #3a86ff 100%);
+  --btn-primary-hover: linear-gradient(90deg, #3a86ff 0%, #00b4d8 100%);
+  --btn-secondary-bg: linear-gradient(90deg, #7fffd4 0%, #3ec6e0 100%);
+  --btn-secondary-hover: linear-gradient(90deg, #3ec6e0 0%, #7fffd4 100%);
+  --btn-outline-bg: transparent;
+  --btn-outline-border: #3ec6e0;
+  --btn-success-bg: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+  --btn-success-hover: linear-gradient(90deg, #38f9d7 0%, #43e97b 100%);
+  --btn-danger-bg: linear-gradient(90deg, #ff6b6b 0%, #f06595 100%);
+  --btn-danger-hover: linear-gradient(90deg, #f06595 0%, #ff6b6b 100%);
+  --btn-disabled-bg: #e0e0e0;
+  --btn-disabled-color: #b0b0b0;
+  --btn-shadow: 0 2px 12px 0 rgba(62,198,224,0.18);
+  --btn-radius: 16px;
+  --btn-font: 'Montserrat', sans-serif;
+}
+
+/* Override existing button styles with new ones */
+.btn,
+.button,
+button[class*="btn-"],
+button[class^="btn-"],
+.Button,
+[class*="button-"],
+[class^="button-"],
+button[type="submit"],
+button[type="button"],
+button[type="reset"],
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-success,
+.btn-outline,
+.btn-ghost,
+.btn-link,
+button.primary,
+button.secondary,
+button.danger,
+button.success,
+button.outline,
+button.ghost,
+button.link {
+  font-family: var(--btn-font) !important;
+  font-size: 1.08rem !important;
+  font-weight: 600 !important;
+  border: none !important;
+  border-radius: var(--btn-radius) !important;
+  padding: 12px 32px !important;
+  color: #fff !important;
+  background: var(--btn-primary-bg) !important;
+  box-shadow: var(--btn-shadow) !important;
+  cursor: pointer !important;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.1s !important;
+  outline: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  position: relative !important;
+  letter-spacing: 0.5px !important;
+  user-select: none !important;
+}
+
+/* Primary button hover state */
+.btn:hover,
+.button:hover,
+button[class*="btn-"]:hover,
+button[class^="btn-"]:hover,
+.Button:hover,
+[class*="button-"]:hover,
+[class^="button-"]:hover,
+button[type="submit"]:hover,
+button[type="button"]:hover,
+button[type="reset"]:hover,
+.btn-primary:hover,
+button.primary:hover {
+  background: var(--btn-primary-hover) !important;
+  transform: translateY(-2px) scale(1.03) !important;
+  box-shadow: 0 4px 18px 0 rgba(62,198,224,0.22) !important;
+}
+
+/* Secondary button */
+.btn-secondary,
+button.secondary,
+[class*="button-secondary"],
+[class^="button-secondary"] {
+  background: var(--btn-secondary-bg) !important;
+  color: #222 !important;
+}
+
+/* Secondary button hover state */
+.btn-secondary:hover,
+button.secondary:hover,
+[class*="button-secondary"]:hover,
+[class^="button-secondary"]:hover {
+  background: var(--btn-secondary-hover) !important;
+  color: #222 !important;
+}
+
+/* Outline button */
+.btn-outline,
+button.outline,
+[class*="button-outline"],
+[class^="button-outline"] {
+  background: var(--btn-outline-bg) !important;
+  color: var(--btn-outline-border) !important;
+  border: 2px solid var(--btn-outline-border) !important;
+  box-shadow: none !important;
+}
+
+/* Outline button hover state */
+.btn-outline:hover,
+button.outline:hover,
+[class*="button-outline"]:hover,
+[class^="button-outline"]:hover {
+  background: var(--btn-secondary-bg) !important;
+  color: #222 !important;
+  border-color: var(--btn-secondary-bg) !important;
+}
+
+/* Success button */
+.btn-success,
+button.success,
+[class*="button-success"],
+[class^="button-success"] {
+  background: var(--btn-success-bg) !important;
+  color: #fff !important;
+}
+
+/* Success button hover state */
+.btn-success:hover,
+button.success:hover,
+[class*="button-success"]:hover,
+[class^="button-success"]:hover {
+  background: var(--btn-success-hover) !important;
+}
+
+/* Danger/Destructive button */
+.btn-danger,
+button.danger,
+.btn-destructive,
+button.destructive,
+[class*="button-danger"],
+[class^="button-danger"],
+[class*="button-destructive"],
+[class^="button-destructive"] {
+  background: var(--btn-danger-bg) !important;
+  color: #fff !important;
+}
+
+/* Danger button hover state */
+.btn-danger:hover,
+button.danger:hover,
+.btn-destructive:hover,
+button.destructive:hover,
+[class*="button-danger"]:hover,
+[class^="button-danger"]:hover,
+[class*="button-destructive"]:hover,
+[class^="button-destructive"]:hover {
+  background: var(--btn-danger-hover) !important;
+}
+
+/* Disabled button */
+.btn:disabled,
+.button:disabled,
+button[class*="btn-"]:disabled,
+button[class^="btn-"]:disabled,
+.Button:disabled,
+[class*="button-"]:disabled,
+[class^="button-"]:disabled,
+button[type="submit"]:disabled,
+button[type="button"]:disabled,
+button[type="reset"]:disabled,
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled,
+.btn-success:disabled,
+.btn-outline:disabled,
+button.primary:disabled,
+button.secondary:disabled,
+button.danger:disabled,
+button.success:disabled,
+button.outline:disabled,
+button[disabled],
+.btn[disabled],
+.button[disabled] {
+  background: var(--btn-disabled-bg) !important;
+  color: var(--btn-disabled-color) !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  border: none !important;
+  opacity: 0.7 !important;
+  pointer-events: none !important;
+}
+
+/* Loading button */
+.btn-loading,
+.button-loading,
+.loading,
+.btn[data-loading="true"],
+.button[data-loading="true"],
+.btn[aria-busy="true"],
+.button[aria-busy="true"] {
+  position: relative !important;
+  color: #fff !important;
+  pointer-events: none !important;
+  opacity: 0.8 !important;
+}
+
+.btn-spinner,
+.loading-spinner,
+.spinner {
+  width: 18px !important;
+  height: 18px !important;
+  border: 3px solid #fff !important;
+  border-top: 3px solid #3ec6e0 !important;
+  border-radius: 50% !important;
+  display: inline-block !important;
+  animation: spin 1s linear infinite !important;
+  margin-right: 8px !important;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Icon button */
+.btn-icon,
+button.icon,
+[class*="button-icon"],
+[class^="button-icon"],
+.icon-button {
+  padding: 10px 10px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: var(--btn-outline-bg) !important;
+  color: var(--btn-outline-border) !important;
+  border: 2px solid var(--btn-outline-border) !important;
+  box-shadow: none !important;
+  justify-content: center !important;
+  font-size: 0 !important;
+}
+
+.btn-icon svg,
+button.icon svg,
+[class*="button-icon"] svg,
+[class^="button-icon"] svg,
+.icon-button svg {
+  width: 22px !important;
+  height: 22px !important;
+  stroke: var(--btn-outline-border) !important;
+  fill: none !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  transition: stroke 0.18s !important;
+}
+
+.btn-icon:hover,
+button.icon:hover,
+[class*="button-icon"]:hover,
+[class^="button-icon"]:hover,
+.icon-button:hover {
+  background: var(--btn-secondary-bg) !important;
+  border-color: var(--btn-secondary-bg) !important;
+  color: #222 !important;
+}
+
+.btn-icon:hover svg,
+button.icon:hover svg,
+[class*="button-icon"]:hover svg,
+[class^="button-icon"]:hover svg,
+.icon-button:hover svg {
+  stroke: #222 !important;
+}
+
+/* Danger icon button */
+.btn-icon.btn-danger,
+button.icon.danger,
+[class*="button-icon"][class*="danger"],
+[class^="button-icon"][class*="danger"],
+.icon-button.danger {
+  border-color: #ff6b6b !important;
+  color: #ff6b6b !important;
+}
+
+.btn-icon.btn-danger svg,
+button.icon.danger svg,
+[class*="button-icon"][class*="danger"] svg,
+[class^="button-icon"][class*="danger"] svg,
+.icon-button.danger svg {
+  stroke: #ff6b6b !important;
+}
+
+.btn-icon.btn-danger:hover,
+button.icon.danger:hover,
+[class*="button-icon"][class*="danger"]:hover,
+[class^="button-icon"][class*="danger"]:hover,
+.icon-button.danger:hover {
+  background: var(--btn-danger-bg) !important;
+  border-color: var(--btn-danger-bg) !important;
+  color: #fff !important;
+}
+
+.btn-icon.btn-danger:hover svg,
+button.icon.danger:hover svg,
+[class*="button-icon"][class*="danger"]:hover svg,
+[class^="button-icon"][class*="danger"]:hover svg,
+.icon-button.danger:hover svg {
+  stroke: #fff !important;
+}
+
+/* Success icon button */
+.btn-icon.btn-success,
+button.icon.success,
+[class*="button-icon"][class*="success"],
+[class^="button-icon"][class*="success"],
+.icon-button.success {
+  border-color: #43e97b !important;
+  color: #43e97b !important;
+}
+
+.btn-icon.btn-success svg,
+button.icon.success svg,
+[class*="button-icon"][class*="success"] svg,
+[class^="button-icon"][class*="success"] svg,
+.icon-button.success svg {
+  stroke: #43e97b !important;
+}
+
+.btn-icon.btn-success:hover,
+button.icon.success:hover,
+[class*="button-icon"][class*="success"]:hover,
+[class^="button-icon"][class*="success"]:hover,
+.icon-button.success:hover {
+  background: var(--btn-success-bg) !important;
+  border-color: var(--btn-success-bg) !important;
+  color: #fff !important;
+}
+
+.btn-icon.btn-success:hover svg,
+button.icon.success:hover svg,
+[class*="button-icon"][class*="success"]:hover svg,
+[class^="button-icon"][class*="success"]:hover svg,
+.icon-button.success:hover svg {
+  stroke: #fff !important;
+}
+
+/* Override for shadcn-ui specific button components */
+.btn-primary,
+.btn-secondary,
+.btn-destructive,
+.btn-outline,
+.btn-ghost,
+.btn-link,
+[class*="button-primary"],
+[class*="button-secondary"],
+[class*="button-destructive"],
+[class*="button-outline"],
+[class*="button-ghost"],
+[class*="button-link"] {
+  height: auto !important;
+}
+
+/* Special styles for shadcn/ui button components */
+.button,
+[data-shadcn-button],
+button[data-state],
+[class*="inline-flex items-center justify-center whitespace-nowrap"],
+[class^="inline-flex items-center justify-center whitespace-nowrap"] {
+  font-family: var(--btn-font) !important;
+  font-size: 1.08rem !important;
+  font-weight: 600 !important;
+  border: none !important;
+  border-radius: var(--btn-radius) !important;
+  padding: 12px 32px !important;
+  color: #fff !important;
+  background: var(--btn-primary-bg) !important;
+  box-shadow: var(--btn-shadow) !important;
+  height: auto !important;
+  min-height: auto !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* ShadCN variants */
+.button[data-variant="default"],
+[data-shadcn-button][data-variant="default"] {
+  background: var(--btn-primary-bg) !important;
+  color: #fff !important;
+}
+
+.button[data-variant="secondary"],
+[data-shadcn-button][data-variant="secondary"] {
+  background: var(--btn-secondary-bg) !important;
+  color: #222 !important;
+}
+
+.button[data-variant="outline"],
+[data-shadcn-button][data-variant="outline"] {
+  background: var(--btn-outline-bg) !important;
+  color: var(--btn-outline-border) !important;
+  border: 2px solid var(--btn-outline-border) !important;
+  box-shadow: none !important;
+}
+
+.button[data-variant="destructive"],
+[data-shadcn-button][data-variant="destructive"] {
+  background: var(--btn-danger-bg) !important;
+  color: #fff !important;
+}
+
+/* Small buttons */
+.button[data-size="sm"],
+[data-shadcn-button][data-size="sm"],
+.button.small,
+.btn-sm,
+.btn.small,
+button.small {
+  padding: 8px 24px !important;
+  font-size: 0.95rem !important;
+}
+
+/* Icon-only buttons in ShadCN */
+button.rounded-full,
+button.size-10,
+button.size-9,
+button.size-8,
+button.p-0,
+button.p-2,
+button.p-3 {
+  padding: 10px 10px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background: var(--btn-outline-bg) !important;
+  color: var(--btn-outline-border) !important;
+  border: 2px solid var(--btn-outline-border) !important;
+  box-shadow: none !important;
+}
+
+button.rounded-full svg,
+button.size-10 svg,
+button.size-9 svg,
+button.size-8 svg,
+button.p-0 svg,
+button.p-2 svg,
+button.p-3 svg {
+  stroke: var(--btn-outline-border) !important;
+  fill: none !important;
+}
+
+button.rounded-full:hover,
+button.size-10:hover,
+button.size-9:hover,
+button.size-8:hover,
+button.p-0:hover,
+button.p-2:hover,
+button.p-3:hover {
+  background: var(--btn-secondary-bg) !important;
+  border-color: var(--btn-secondary-bg) !important;
+}
+
+button.rounded-full:hover svg,
+button.size-10:hover svg,
+button.size-9:hover svg,
+button.size-8:hover svg,
+button.p-0:hover svg,
+button.p-2:hover svg,
+button.p-3:hover svg {
+  stroke: #222 !important;
+} 

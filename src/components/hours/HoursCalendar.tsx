@@ -1,15 +1,14 @@
-
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HoursRecord } from "@/types/hours";
+import { HoursRecord, HourEntry } from "@/types/hours";
 
 interface HoursCalendarProps {
   currentMonth: Date;
   onMonthChange: (date: Date) => void;
   selectedDay: number | null;
   onDaySelect: (day: number | null) => void;
-  hoursData: HoursRecord;
+  hoursData: HoursRecord | { [day: string]: HourEntry };
   isStaff: boolean;
   isSupervisor: boolean;
   supervisedStaff?: Array<{ id: string }>;
@@ -81,6 +80,16 @@ export const HoursCalendar = ({
     return checkDate > new Date(today.setHours(23, 59, 59, 999));
   };
 
+  const getHoursForDay = (day: number): string | undefined => {
+    const dayStr = day.toString();
+    const entry = hoursData[dayStr];
+    if (!entry) return undefined;
+    if (typeof entry === 'object' && 'hours' in entry) {
+      return `${entry.hours}h`;
+    }
+    return undefined;
+  };
+
   return (
     <div className="bg-white border border-border rounded-lg overflow-hidden">
       <div className="flex justify-between items-center p-4 border-b border-border">
@@ -122,28 +131,34 @@ export const HoursCalendar = ({
           
           {days.map((day) => {
             const hasHours = isStaff
-              ? hoursData[day] !== undefined
+              ? getHoursForDay(day) !== undefined
               : (isSupervisor && supervisedStaff?.some(staff =>
-                  hoursData[staff.id]?.[day] !== undefined
+                  hoursData[staff.id]?.[day.toString()] !== undefined
                 ));
+                
+            const dayIsToday = isToday(day);
+            const dayIsDisabled = !dayIsToday; // Disable all days except today
             
             return (
               <div 
                 key={`day-${day}`} 
-                className={`h-24 rounded-md border border-border p-2 cursor-pointer transition-colors ${
+                className={`h-24 rounded-md border border-border p-2 ${
+                  dayIsDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                } transition-colors ${
                   day === selectedDay ? "ring-2 ring-primary" : ""
-                } ${isToday(day) ? "bg-primary/5" : ""} ${
-                  isPastDate(day) && !isToday(day) ? "bg-muted/20" : ""
+                } ${dayIsToday ? "bg-primary/5" : ""} ${
+                  isPastDate(day) && !dayIsToday ? "bg-muted/20" : ""
                 } ${isFutureDate(day) ? "bg-muted/10" : ""}`}
-                onClick={() => onDaySelect(day)}
+                onClick={() => dayIsDisabled ? null : onDaySelect(day)}
+                title={dayIsDisabled ? "You can only submit hours for the current day" : ""}
               >
                 <div className="flex justify-between">
-                  <span className={`text-sm font-medium ${isToday(day) ? "text-primary" : ""}`}>
+                  <span className={`text-sm font-medium ${dayIsToday ? "text-primary" : ""}`}>
                     {day}
                   </span>
                   {hasHours && (
                     <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/20 text-primary">
-                      {isStaff && hoursData[day] !== undefined ? `${hoursData[day]}h` : '●'}
+                      {isStaff ? getHoursForDay(day) : '●'}
                     </span>
                   )}
                 </div>

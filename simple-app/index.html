@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Test App</title>
+</head>
+<body>
+  <h1>Simple Test App</h1>
+  <p>If you can see this, HTML is loading correctly.</p>
+  
+  <div id="app">
+    <!-- App content will be rendered here -->
+  </div>
+
+  <script>
+    // Simple JavaScript to test if JS is working
+    document.addEventListener('DOMContentLoaded', function() {
+      const appDiv = document.getElementById('app');
+      appDiv.innerHTML = `
+        <div style="margin: 20px 0; padding: 20px; border: 1px solid #ccc;">
+          <h2>JavaScript is working!</h2>
+          <p>Current time: ${new Date().toLocaleTimeString()}</p>
+          <button id="testBtn">Click me</button>
+        </div>
+      `;
+      
+      // Add event listener to the button
+      document.getElementById('testBtn').addEventListener('click', function() {
+        alert('Button clicked! JavaScript is working correctly.');
+      });
+    });
+  </script>
+</body>
+</html> 

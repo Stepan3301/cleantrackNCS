@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug Page</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+    h1 { color: #333; }
+    h2 { color: #555; margin-top: 30px; }
+    button {
+      background: #4338ca;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    pre {
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 4px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Debug Page</h1>
+  <p>If you can see this page, your browser is functioning correctly.</p>
+  
+  <h2>Current Time</h2>
+  <div id="time"></div>
+  
+  <h2>Browser Information</h2>
+  <div id="browser-info"></div>
+  
+  <h2>Environment</h2>
+  <div id="env-info"></div>
+  
+  <h2>Actions</h2>
+  <div>
+    <button id="test-button">Test JavaScript</button>
+    <button id="clear-storage">Clear Local Storage</button>
+  </div>
+  
+  <h2>Console Output</h2>
+  <pre id="console-output">Console messages will appear here...</pre>
+  
+  <script>
+    // Show the current time
+    document.getElementById('time').textContent = new Date().toLocaleTimeString();
+    
+    // Show browser info
+    document.getElementById('browser-info').innerHTML = `
+      <p>User Agent: ${navigator.userAgent}</p>
+      <p>Platform: ${navigator.platform}</p>
+      <p>Cookies Enabled: ${navigator.cookieEnabled}</p>
+      <p>Language: ${navigator.language}</p>
+    `;
+    
+    // Show environment info
+    document.getElementById('env-info').innerHTML = `
+      <p>Protocol: ${window.location.protocol}</p>
+      <p>Host: ${window.location.host}</p>
+      <p>Path: ${window.location.pathname}</p>
+    `;
+    
+    // Test button
+    document.getElementById('test-button').addEventListener('click', function() {
+      const message = 'JavaScript is working properly!';
+      alert(message);
+      logToPage(message);
+    });
+    
+    // Clear local storage
+    document.getElementById('clear-storage').addEventListener('click', function() {
+      localStorage.clear();
+      sessionStorage.clear();
+      logToPage('Local storage and session storage cleared');
+    });
+    
+    // Function to log to page
+    function logToPage(message) {
+      const output = document.getElementById('console-output');
+      const now = new Date().toLocaleTimeString();
+      output.textContent += `\n[${now}] ${message}`;
+      output.scrollTop = output.scrollHeight;
+    }
+    
+    // Log initial message
+    logToPage('Debug page loaded successfully');
+  </script>
+</body>
+</html> 

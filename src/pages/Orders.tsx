@@ -1,9 +1,8 @@
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/contexts/auth-context"
-import { FilePlus } from "lucide-react"
+import { FilePlus, Loader2 } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -20,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -40,71 +39,78 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
-
-// Define the order interface
-interface Order {
-  id: string
-  date: Date
-  location: string
-  workers: number
-  expenses: number
-  revenue: number
-  profit: number
-}
+import { ordersService, OrderInput } from "@/lib/services/orders-service"
+import { Order } from "@/types/database.types"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const Orders = () => {
   const { user } = useAuth()
   const { toast } = useToast()
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: "1",
-      date: new Date(2025, 3, 10),
-      location: "Dubai Marina, Building 7",
-      workers: 3,
-      expenses: 450,
-      revenue: 1200,
-      profit: 750
-    },
-    {
-      id: "2",
-      date: new Date(2025, 3, 12),
-      location: "Business Bay Office Complex",
-      workers: 5,
-      expenses: 720,
-      revenue: 1800,
-      profit: 1080
-    },
-    {
-      id: "3",
-      date: new Date(2025, 3, 14),
-      location: "Palm Jumeirah Villa",
-      workers: 4,
-      expenses: 900,
-      revenue: 2500,
-      profit: 1600
-    }
-  ])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [showAddOrderDialog, setShowAddOrderDialog] = useState(false)
-  const [newOrder, setNewOrder] = useState<Partial<Order>>({
+  const [newOrder, setNewOrder] = useState<{
+    date: Date | undefined;
+    location: string;
+    description: string;
+    workers_count: number;
+    expenses: number;
+    revenue: number;
+    client_name: string;
+    client_contact: string;
+    status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
+  }>({
     date: new Date(),
     location: "",
-    workers: 1,
+    description: "",
+    workers_count: 1,
     expenses: 0,
-    revenue: 0
+    revenue: 0,
+    client_name: "",
+    client_contact: "",
+    status: "scheduled"
   })
 
+  // Fetch orders on component mount
+  useEffect(() => {
+    async function fetchOrders() {
+      try {
+        setIsLoading(true)
+        const data = await ordersService.getAllOrders()
+        setOrders(data)
+      } catch (error) {
+        console.error("Error fetching orders:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load orders. Please try again.",
+          variant: "destructive"
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchOrders()
+  }, [toast])
+
   // Calculate overall metrics
-  const overallRevenue = orders.reduce((sum, order) => sum + order.revenue, 0)
-  const overallExpenses = orders.reduce((sum, order) => sum + order.expenses, 0)
-  const overallProfit = orders.reduce((sum, order) => sum + order.profit, 0)
+  const overallRevenue = orders.reduce((sum, order) => sum + Number(order.revenue), 0)
+  const overallExpenses = orders.reduce((sum, order) => sum + Number(order.expenses), 0)
+  const overallProfit = orders.reduce((sum, order) => sum + Number(order.profit), 0)
   
   // Calculate efficiency percentage
   const efficiencyPercentage = overallRevenue > 0 
-    ? Math.round(((overallProfit - overallExpenses) / overallProfit) * 100) 
+    ? Math.round((overallProfit / overallRevenue) * 100) 
     : 0
 
-  const handleAddOrder = () => {
-    if (!newOrder.location || !newOrder.date) {
+  const handleAddOrder = async () => {
+    if (!newOrder.date || !newOrder.location) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields",
@@ -113,41 +119,60 @@ const Orders = () => {
       return
     }
 
-    const revenue = Number(newOrder.revenue) || 0
-    const expenses = Number(newOrder.expenses) || 0
-    const profit = revenue - expenses
+    try {
+      setIsLoading(true)
+      
+      const orderInput: OrderInput = {
+        date: newOrder.date.toISOString().split('T')[0],
+        location: newOrder.location,
+        description: newOrder.description || undefined,
+        workers_count: newOrder.workers_count,
+        expenses: newOrder.expenses,
+        revenue: newOrder.revenue,
+        client_name: newOrder.client_name || undefined,
+        client_contact: newOrder.client_contact || undefined,
+        status: newOrder.status
+      }
 
-    const order: Order = {
-      id: (orders.length + 1).toString(),
-      date: newOrder.date!,
-      location: newOrder.location,
-      workers: Number(newOrder.workers) || 1,
-      expenses: expenses,
-      revenue: revenue,
-      profit: profit
+      const createdOrder = await ordersService.createOrder(orderInput)
+      
+      if (createdOrder) {
+        setOrders([createdOrder, ...orders])
+        setShowAddOrderDialog(false)
+        setNewOrder({
+          date: new Date(),
+          location: "",
+          description: "",
+          workers_count: 1,
+          expenses: 0,
+          revenue: 0,
+          client_name: "",
+          client_contact: "",
+          status: "scheduled"
+        })
+
+        toast({
+          title: "Order added",
+          description: "New order has been successfully added"
+        })
+      }
+    } catch (error) {
+      console.error("Error creating order:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create order. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
     }
-
-    setOrders([...orders, order])
-    setShowAddOrderDialog(false)
-    setNewOrder({
-      date: new Date(),
-      location: "",
-      workers: 1,
-      expenses: 0,
-      revenue: 0
-    })
-
-    toast({
-      title: "Order added",
-      description: "New order has been successfully added"
-    })
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Orders</h1>
-        <Button onClick={() => setShowAddOrderDialog(true)}>
+        <Button onClick={() => setShowAddOrderDialog(true)} disabled={isLoading}>
           <FilePlus size={16} className="mr-2" />
           Create New Order
         </Button>
@@ -207,30 +232,52 @@ const Orders = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Workers</TableHead>
-                <TableHead>Expenses (AED)</TableHead>
-                <TableHead>Revenue (AED)</TableHead>
-                <TableHead>Profit (AED)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>{format(order.date, "MMM dd, yyyy")}</TableCell>
-                  <TableCell>{order.location}</TableCell>
-                  <TableCell>{order.workers}</TableCell>
-                  <TableCell>{order.expenses.toLocaleString()}</TableCell>
-                  <TableCell>{order.revenue.toLocaleString()}</TableCell>
-                  <TableCell className="font-medium">{order.profit.toLocaleString()}</TableCell>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No orders found. Create your first order to get started.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Workers</TableHead>
+                  <TableHead>Expenses (AED)</TableHead>
+                  <TableHead>Revenue (AED)</TableHead>
+                  <TableHead>Profit (AED)</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {orders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell>{format(parseISO(order.date), "MMM dd, yyyy")}</TableCell>
+                    <TableCell>{order.location}</TableCell>
+                    <TableCell>{order.workers_count}</TableCell>
+                    <TableCell>{Number(order.expenses).toLocaleString()}</TableCell>
+                    <TableCell>{Number(order.revenue).toLocaleString()}</TableCell>
+                    <TableCell className="font-medium">{Number(order.profit).toLocaleString()}</TableCell>
+                    <TableCell>
+                      <span className={cn(
+                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                        order.status === "completed" && "bg-success/20 text-success",
+                        order.status === "in-progress" && "bg-info/20 text-info",
+                        order.status === "scheduled" && "bg-primary/20 text-primary",
+                        order.status === "cancelled" && "bg-destructive/20 text-destructive"
+                      )}>
+                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -278,16 +325,48 @@ const Orders = () => {
                 onChange={(e) => setNewOrder({ ...newOrder, location: e.target.value })}
               />
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Description (Optional)</Label>
+              <Textarea
+                id="description"
+                placeholder="Enter any additional details"
+                value={newOrder.description}
+                onChange={(e) => setNewOrder({ ...newOrder, description: e.target.value })}
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="client_name">Client Name (Optional)</Label>
+                <Input
+                  id="client_name"
+                  placeholder="Enter client name"
+                  value={newOrder.client_name}
+                  onChange={(e) => setNewOrder({ ...newOrder, client_name: e.target.value })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="client_contact">Client Contact (Optional)</Label>
+                <Input
+                  id="client_contact"
+                  placeholder="Enter client phone or email"
+                  value={newOrder.client_contact}
+                  onChange={(e) => setNewOrder({ ...newOrder, client_contact: e.target.value })}
+                />
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="workers">Number of Workers</Label>
+                <Label htmlFor="workers_count">Number of Workers</Label>
                 <Input
-                  id="workers"
+                  id="workers_count"
                   type="number"
                   min="1"
-                  value={newOrder.workers}
-                  onChange={(e) => setNewOrder({ ...newOrder, workers: parseInt(e.target.value) || 1 })}
+                  value={newOrder.workers_count}
+                  onChange={(e) => setNewOrder({ ...newOrder, workers_count: parseInt(e.target.value) || 1 })}
                 />
               </div>
 
@@ -313,6 +392,27 @@ const Orders = () => {
                 />
               </div>
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select 
+                value={newOrder.status} 
+                onValueChange={(value) => setNewOrder({ 
+                  ...newOrder, 
+                  status: value as 'scheduled' | 'in-progress' | 'completed' | 'cancelled'
+                })}
+              >
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             <div className="space-y-2">
               <Label>Profit (AED)</Label>
@@ -324,10 +424,13 @@ const Orders = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddOrderDialog(false)}>
+            <Button variant="outline" onClick={() => setShowAddOrderDialog(false)} disabled={isLoading}>
               Cancel
             </Button>
-            <Button onClick={handleAddOrder}>Add Order</Button>
+            <Button onClick={handleAddOrder} disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Add Order
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

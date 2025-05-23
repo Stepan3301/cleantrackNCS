@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent, CardFooter, CardHeader } from "./card"
@@ -9,6 +8,8 @@ interface DashboardCardProps extends React.HTMLAttributes<HTMLDivElement> {
   icon?: React.ReactNode
   footer?: React.ReactNode
   isLoading?: boolean
+  interactive?: boolean
+  wide?: boolean
 }
 
 export function DashboardCard({
@@ -17,18 +18,28 @@ export function DashboardCard({
   icon,
   footer,
   isLoading = false,
+  interactive = false,
+  wide = false,
   children,
   className,
   ...props
 }: DashboardCardProps) {
   return (
-    <Card className={cn("overflow-hidden", className)} {...props}>
+    <Card 
+      className={cn(
+        "overflow-hidden dashboard-card", 
+        interactive && "interactive",
+        wide && "wide",
+        className
+      )} 
+      {...props}
+    >
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
         <div className="flex flex-col space-y-1.5">
-          {title && <h3 className="font-semibold leading-none tracking-tight">{title}</h3>}
+          {title && <h3 className="card-title leading-none tracking-tight">{title}</h3>}
           {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
-        {icon && <div className="text-muted-foreground w-4 h-4">{icon}</div>}
+        {icon && <div className="card-icon">{icon}</div>}
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -39,7 +50,11 @@ export function DashboardCard({
           children
         )}
       </CardContent>
-      {footer && <CardFooter className="border-t px-6">{footer}</CardFooter>}
+      {footer && (
+        <CardFooter className="card-footer px-0 mt-auto">
+          {footer}
+        </CardFooter>
+      )}
     </Card>
   )
 }

@@ -1,0 +1,166 @@
+/* FullCalendar custom styles */
+
+/* Day cell content styles */
+.day-cell-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  min-height: 44px;
+}
+
+.date-number {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.hours-display {
+  font-size: 0.9em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: rgba(52, 152, 219, 0.2);
+  color: #2980b9;
+}
+
+/* New styles for hours input */
+.hours-input {
+  width: 100%;
+  max-width: 50px;
+  padding: 2px 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.9em;
+  background-color: rgba(52, 152, 219, 0.1);
+  margin-top: 2px;
+}
+
+.hours-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+}
+
+.hours-input::-webkit-inner-spin-button,
+.hours-input::-webkit-outer-spin-button {
+  opacity: 1;
+  height: 22px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .fc .fc-daygrid-day-frame {
+    padding: 2px;
+  }
+  
+  .day-cell-content {
+    min-height: 30px;
+  }
+  
+  .date-number {
+    font-size: 0.8em;
+    margin-bottom: 2px;
+  }
+  
+  .hours-display {
+    font-size: 0.8em;
+    padding: 1px 4px;
+  }
+  
+  .hours-input {
+    max-width: 40px;
+    font-size: 0.8em;
+    padding: 1px 2px;
+  }
+}
+
+/* Highlight today's date */
+.fc .fc-day-today {
+  background-color: rgba(252, 243, 207, 0.4) !important;
+}
+
+/* Style for events */
+.fc-event {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-weight: 500;
+}
+
+/* Custom highlight for calendar when user is selecting a day */
+.fc .fc-highlight {
+  background: rgba(52, 152, 219, 0.2);
+}
+
+/* Button styles to match the app theme */
+.fc .fc-button {
+  background-color: #f8f9fa;
+  border-color: #ddd;
+  color: #333;
+  font-weight: 500;
+}
+
+.fc .fc-button-primary:not(:disabled):active,
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+  background-color: #3498db;
+  border-color: #2980b9;
+  color: #fff;
+}
+
+.fc .fc-button-primary:hover {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+}
+
+/* Header styles */
+.fc .fc-toolbar-title {
+  font-size: 1.2em;
+  font-weight: 600;
+}
+
+/* Day header styles */
+.fc-theme-standard th {
+  border-color: #ddd;
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+/* Table border styles */
+.fc-theme-standard .fc-scrollgrid {
+  border-color: #ddd;
+}
+
+/* Dark theme compatibility - can be expanded as needed */
+@media (prefers-color-scheme: dark) {
+  .fc-theme-standard th {
+    background-color: #333;
+    color: #eee;
+  }
+  
+  .fc .fc-button {
+    background-color: #444;
+    border-color: #555;
+    color: #eee;
+  }
+  
+  .fc .fc-button-primary:hover {
+    background-color: #555;
+    border-color: #666;
+  }
+  
+  .hours-display {
+    background-color: rgba(52, 152, 219, 0.3);
+    color: #64b5f6;
+  }
+  
+  .hours-input {
+    background-color: rgba(52, 152, 219, 0.2);
+    color: #eee;
+    border-color: #555;
+  }
+  
+  .fc .fc-day-today {
+    background-color: rgba(255, 193, 7, 0.2) !important;
+  }
+} 

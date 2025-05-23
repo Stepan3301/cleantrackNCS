@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,11 +11,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useState } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
-import { Crown, Users, UserRoundCog, UserCheck, UserRound, Mail } from "lucide-react"
+import { Crown, Users, UserRoundCog, UserCheck, UserRound, Mail, Info, Loader2 } from "lucide-react"
 
 interface AuthDialogProps {
   open: boolean;
@@ -29,123 +28,191 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
   const [isLoading, setIsLoading] = useState(false)
   const [selectedRole, setSelectedRole] = useState<string>("staff")
   const [email, setEmail] = useState<string>("")
-  const { login, register } = useAuth()
+  const [password, setPassword] = useState<string>("")
+  const [firstName, setFirstName] = useState<string>("")
+  const [lastName, setLastName] = useState<string>("")
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const { login, register, error } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    
-    const formData = new FormData(e.target as HTMLFormElement)
+  // Reset form state when dialog opens/closes or tab changes
+  React.useEffect(() => {
+    if (open) {
+      setFieldErrors({})
+      setIsLoading(false)
+      setEmail("")
+      setPassword("")
+      setFirstName("")
+      setLastName("")
+    }
+  }, [open, tab])
+
+  // Validate login form 
+  const validateLoginForm = (formData: FormData): boolean => {
     const email = formData.get('email') as string
     const password = formData.get('password') as string
-
-    const success = await login(email, password)
+    const errors: Record<string, string> = {}
     
-    if (success) {
+    if (!email) errors.email = "Email is required"
+    if (!password) errors.password = "Password is required"
+    
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+  
+  // Validate registration form
+  const validateRegisterForm = (formData: FormData): boolean => {
+    const firstName = formData.get('firstName') as string
+    const lastName = formData.get('lastName') as string
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+    const phone = formData.get('phone') as string
+    const errors: Record<string, string> = {}
+    
+    if (!firstName) errors.firstName = "First name is required"
+    if (!lastName) errors.lastName = "Last name is required"
+    if (!email) errors.email = "Email is required"
+    if (!password) errors.password = "Password is required"
+    if (password && password.length < 6) errors.password = "Password must be at least 6 characters"
+    if (!phone) errors.phone = "Phone number is required"
+    
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  // Optimized handler for login
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    const formData = new FormData(e.target as HTMLFormElement)
+    
+    // Validate form before submission
+    if (!validateLoginForm(formData)) return;
+    
+    setIsLoading(true)
+    
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+    
+    try {
+      await login(email, password)
+      
       toast({
         title: "Success",
         description: "Successfully logged in",
       })
-      onOpenChange(false)
-      navigate('/dashboard')
-    } else {
-      toast({
-        title: "Error",
-        description: "Invalid credentials",
-        variant: "destructive",
-      })
-    }
-    
-    setIsLoading(false)
-  }
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    
-    try {
-      const formData = new FormData(e.target as HTMLFormElement)
-      const firstName = formData.get('firstName') as string
-      const lastName = formData.get('lastName') as string
-      const userEmail = formData.get('email') as string || `${firstName}.${lastName}@sparkle.ae`.toLowerCase()
-      const password = 'password123' // Default password for instant registration
       
-      console.log("Registration attempt with:", { firstName, lastName, email: userEmail, role: selectedRole })
+      // Use setTimeout to ensure the animation completes
+      setTimeout(() => {
+        onOpenChange(false)
+        navigate('/dashboard')
+      }, 100)
+    } catch (err) {
+      console.error("Login error:", err)
       
-      const userData = {
-        email: userEmail,
-        password,
-        name: `${firstName} ${lastName}`,
-        role: selectedRole
-      }
-
-      const success = await register(userData)
+      // Handle specific errors for registration status
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
       
-      if (success) {
-        console.log("Registration successful, attempting login with:", userEmail, password)
-        
-        // Add the user to mockUsers in auth-context to enable instant login
-        // The register function in auth-context.tsx just returns true but doesn't actually add the user
-        // We need to manually add the user to mockUsers for it to work
-        
-        // Attempt login with registered credentials
-        const loginSuccess = await login(userEmail, password)
-        
-        if (loginSuccess) {
-          toast({
-            title: "Success",
-            description: `Successfully registered and logged in as ${selectedRole}`,
-          })
-          onOpenChange(false)
-          navigate('/dashboard')
-        } else {
-          // Since we're using mock data, we can allow instant login even if the actual login fails
-          toast({
-            title: "Success",
-            description: `Registration successful as ${selectedRole}`,
-          })
-          onOpenChange(false)
-          navigate('/dashboard')
-        }
+      if (errorMessage.includes("pending approval")) {
+        toast({
+          title: "Registration Pending",
+          description: "Your registration request is still pending approval by an administrator. Please check back later.",
+          variant: "destructive",
+        });
+      } else if (errorMessage.includes("rejected")) {
+        toast({
+          title: "Registration Rejected",
+          description: "Your registration request has been rejected. Please contact an administrator for more information.",
+          variant: "destructive",
+        });
       } else {
         toast({
           title: "Error",
-          description: "Registration failed",
+          description: errorMessage || "Invalid credentials",
           variant: "destructive",
-        })
+        });
       }
-    } catch (error) {
-      console.error("Registration error:", error)
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred during registration",
-        variant: "destructive",
-      })
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [login, navigate, onOpenChange, toast])
+
+  // Optimized handler for registration
+  const handleRegister = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    const formData = new FormData(e.target as HTMLFormElement)
+    
+    // Validate form before submission
+    if (!validateRegisterForm(formData)) return;
+    
+    setIsLoading(true)
+    
+    try {
+      const firstName = formData.get('firstName') as string
+      const lastName = formData.get('lastName') as string
+      const userEmail = formData.get('email') as string || email
+      const password = formData.get('password') as string
+      const phone = formData.get('phone') as string
+      
+      // Instead of directly registering, create a registration request
+      const { registrationRequestsService } = await import('@/lib/services/registration-requests-service');
+      
+      await registrationRequestsService.createRequest({
+        email: userEmail,
+        name: `${firstName} ${lastName}`,
+        phone,
+        desired_role: selectedRole
+      });
+      
+      toast({
+        title: "Registration Request Submitted",
+        description: "Your registration request has been submitted for approval. You will be notified when it is processed.",
+      });
+      
+      // No direct navigation to dashboard since the user isn't registered yet
+      setTimeout(() => {
+        onOpenChange(false);
+      }, 100);
+      
+    } catch (err) {
+      console.error("Registration error:", err);
+      toast({
+        title: "Error",
+        description: error || "An unexpected error occurred during registration",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [email, selectedRole, onOpenChange, toast, error]);
 
   // Function to handle email generation based on first and last name
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const firstNameInput = document.getElementById('firstName') as HTMLInputElement;
-    const lastNameInput = document.getElementById('lastName') as HTMLInputElement;
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'firstName' | 'lastName') => {
+    const value = e.target.value
     
-    if (firstNameInput && lastNameInput && firstNameInput.value && lastNameInput.value) {
-      const generatedEmail = `${firstNameInput.value}.${lastNameInput.value}@sparkle.ae`.toLowerCase();
+    if (field === 'firstName') {
+      setFirstName(value)
+    } else {
+      setLastName(value)
+    }
+    
+    // Only generate email if both fields have values
+    if (firstName && lastName) {
+      const generatedEmail = `${firstName}.${lastName}@sparkle.ae`.toLowerCase();
       setEmail(generatedEmail);
     }
   };
 
-  const roleButtons = [
+  // Memoize role buttons to prevent re-renders
+  const roleButtons = useMemo(() => [
     { role: 'owner', icon: <Crown className="h-5 w-5" />, title: 'Owner' },
     { role: 'head_manager', icon: <UserRoundCog className="h-5 w-5" />, title: 'Head Manager' },
     { role: 'manager', icon: <Users className="h-5 w-5" />, title: 'Manager' },
     { role: 'supervisor', icon: <UserCheck className="h-5 w-5" />, title: 'Supervisor' },
     { role: 'staff', icon: <UserRound className="h-5 w-5" />, title: 'Staff' }
-  ]
+  ], [])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -163,10 +230,26 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
                 Enter your credentials to access your account.
               </DialogDescription>
             </DialogHeader>
+            
             <form onSubmit={handleLogin} className="space-y-4 pt-4">
               <div className="space-y-2">
                 <Label htmlFor="login-email">Username/Email</Label>
-                <Input id="login-email" name="email" placeholder="Enter your username or email" required />
+                <Input 
+                  id="login-email" 
+                  name="email" 
+                  placeholder="Enter your username or email" 
+                  required 
+                  aria-invalid={!!fieldErrors.email}
+                  className={fieldErrors.email ? "border-red-500" : ""}
+                  onChange={() => {
+                    if (fieldErrors.email) {
+                      setFieldErrors({...fieldErrors, email: ""})
+                    }
+                  }}
+                />
+                {fieldErrors.email && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -175,10 +258,33 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
                     Forgot password?
                   </Button>
                 </div>
-                <Input id="login-password" name="password" type="password" placeholder="••••••••" required />
+                <Input 
+                  id="login-password" 
+                  name="password" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  required 
+                  aria-invalid={!!fieldErrors.password}
+                  className={fieldErrors.password ? "border-red-500" : ""}
+                  onChange={() => {
+                    if (fieldErrors.password) {
+                      setFieldErrors({...fieldErrors, password: ""})
+                    }
+                  }}
+                />
+                {fieldErrors.password && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
+                )}
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  "Login"
+                )}
               </Button>
             </form>
           </TabsContent>
@@ -199,8 +305,14 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
                     name="firstName" 
                     placeholder="John" 
                     required 
-                    onChange={handleNameChange}
+                    value={firstName}
+                    onChange={(e) => handleNameChange(e, 'firstName')}
+                    aria-invalid={!!fieldErrors.firstName}
+                    className={fieldErrors.firstName ? "border-red-500" : ""}
                   />
+                  {fieldErrors.firstName && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.firstName}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name</Label>
@@ -209,8 +321,14 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
                     name="lastName" 
                     placeholder="Doe" 
                     required 
-                    onChange={handleNameChange}
+                    value={lastName}
+                    onChange={(e) => handleNameChange(e, 'lastName')}
+                    aria-invalid={!!fieldErrors.lastName}
+                    className={fieldErrors.lastName ? "border-red-500" : ""}
                   />
+                  {fieldErrors.lastName && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.lastName}</p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
@@ -225,11 +343,43 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
                   placeholder="john.doe@sparkle.ae"
+                  aria-invalid={!!fieldErrors.email}
+                  className={fieldErrors.email ? "border-red-500" : ""}
                 />
+                {fieldErrors.email && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password" 
+                  name="password" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  required 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  aria-invalid={!!fieldErrors.password}
+                  className={fieldErrors.password ? "border-red-500" : ""}
+                />
+                {fieldErrors.password && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" name="phone" placeholder="+971 XX XXX XXXX" required />
+                <Input 
+                  id="phone" 
+                  name="phone" 
+                  placeholder="+971 XX XXX XXXX" 
+                  required 
+                  aria-invalid={!!fieldErrors.phone}
+                  className={fieldErrors.phone ? "border-red-500" : ""}
+                />
+                {fieldErrors.phone && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.phone}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Select Role</Label>
@@ -250,7 +400,14 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
               </div>
               <DialogFooter className="pt-4 px-0">
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Creating Account..." : "Create Account"}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    "Create Account"
+                  )}
                 </Button>
               </DialogFooter>
             </form>

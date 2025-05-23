@@ -1,0 +1,64 @@
+:root {
+  --dialog-primary: #3ec6e0;
+  --dialog-accent: #7fffd4;
+  --dialog-bg: rgba(255,255,255,0.18);
+  --dialog-border: rgba(62,198,224,0.25);
+  --dialog-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.13);
+  --dialog-text: #222;
+  --dialog-hover: #e0f7fa;
+  --dialog-danger: #ff6b6b;
+  --dialog-success: #43e97b;
+  --dialog-gradient: linear-gradient(135deg, #43e97b 0%, #3ec6e0 100%);
+}
+
+/* ... existing code ... */
+
+/* Add styling for supervisor dialog */
+.supervisor-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 15, 40, 0.8));
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.2s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Ensure supervisor dialogs always appear on top */
+.supervisor-specific-dialog {
+  z-index: 10000 !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Avoid hiding issues with shadow dom elements */
+[data-radix-popper-content-wrapper]:has(.supervisor-dialog) {
+  z-index: 10000 !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* Ensure dialog content is correctly positioned */
+.supervisor-dialog [data-radix-dialog-content] {
+  max-height: 85vh !important;
+  overflow-y: auto !important;
+}
+
+/* General improved styling for all dialogs in the app */
+.modern-dialog {
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(31, 38, 135, 0.15);
+  border: 1px solid rgba(62, 198, 224, 0.25);
+  overflow: hidden;
+} 

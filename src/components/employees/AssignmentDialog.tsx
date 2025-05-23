@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { User, useAuth } from "@/contexts/auth-context"
 import {
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import "@/styles/modern-employee-profile.css"
 
 interface AssignmentDialogProps {
   isOpen: boolean
@@ -93,53 +93,61 @@ export function AssignmentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="modern-employee-profile-modal p-0 border-none bg-transparent shadow-none">
+        <div className="modern-employee-profile-header">
+          <DialogTitle className="modern-employee-profile-title">
             Assign {employee.name} to a {assignmentType}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="modern-employee-profile-subtitle">
             {employee.role === "staff"
               ? "Select a supervisor to assign this staff member to."
               : "Select a manager to assign this supervisor to."}
           </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="user-select">Select {assignmentType}</Label>
-            <Select
-              value={selectedUserId}
-              onValueChange={setSelectedUserId}
-            >
-              <SelectTrigger id="user-select" className="w-full">
-                <SelectValue placeholder={`Select a ${assignmentType}`} />
-              </SelectTrigger>
-              <SelectContent>
-                {eligibleUsers.length > 0 ? (
-                  eligibleUsers.map(user => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name} ({user.role})
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="none" disabled>
-                    No eligible {assignmentType}s found
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleAssign}>
-            Assign
-          </Button>
-        </DialogFooter>
+        <div className="modern-employee-profile-content">
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="user-select" className="form-label">Select {assignmentType}</Label>
+              <Select
+                value={selectedUserId}
+                onValueChange={setSelectedUserId}
+              >
+                <SelectTrigger id="user-select" className="w-full form-select">
+                  <SelectValue placeholder={`Select a ${assignmentType}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {eligibleUsers.length > 0 ? (
+                    eligibleUsers.map(user => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name} ({user.role})
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>
+                      No eligible {assignmentType}s found
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="modern-employee-profile-footer">
+            <button 
+              className="modern-employee-profile-button cancel"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button 
+              className="modern-employee-profile-button primary"
+              onClick={handleAssign}
+            >
+              Assign
+            </button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )
