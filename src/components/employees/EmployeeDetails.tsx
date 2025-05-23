@@ -65,11 +65,11 @@ export function EmployeeDetails({
   
   // Custom close handler that prevents accidental closing
   const handleOpenChange = (open: boolean) => {
+    // Only allow explicit closing through our buttons
     if (!open) {
-      // Add a small delay to prevent flickering
-      setTimeout(() => {
-        onClose();
-      }, 50);
+      // Don't auto-close the dialog, only close when we explicitly call onClose
+      // This prevents the dialog from disappearing when clicking outside
+      return false;
     }
   };
 
@@ -161,7 +161,12 @@ export function EmployeeDetails({
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogPortal>
           <DialogOverlay className="supervisor-dialog-overlay" />
-          <CustomDialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto modern-dialog supervisor-dialog supervisor-specific-dialog">
+          <CustomDialogContent 
+            className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto modern-dialog supervisor-dialog supervisor-specific-dialog"
+            onEscapeKeyDown={(e) => e.preventDefault()} // Prevent escape key from closing
+            onPointerDownOutside={(e) => e.preventDefault()} // Prevent outside clicks from closing
+            onInteractOutside={(e) => e.preventDefault()} // Prevent any interaction outside from closing
+          >
             <div className="modern-employee-profile">
               <div className="modern-employee-profile-header p-4">
                 <div className="flex flex-col items-center mb-4">
@@ -222,7 +227,12 @@ export function EmployeeDetails({
   // Regular dialog for other roles
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto modern-dialog">
+      <DialogContent 
+        className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto modern-dialog"
+        onEscapeKeyDown={(e) => e.preventDefault()} // Prevent escape key from closing
+        onPointerDownOutside={(e) => e.preventDefault()} // Prevent outside clicks from closing
+        onInteractOutside={(e) => e.preventDefault()} // Prevent any interaction outside from closing
+      >
         {employee && (
           <div className="modern-employee-profile">
             <div className="modern-employee-profile-header">

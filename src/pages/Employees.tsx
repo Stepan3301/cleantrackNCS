@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
 
 // Original components
@@ -24,12 +24,27 @@ const Employees = () => {
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
   const [showAddEmployeeDialog, setShowAddEmployeeDialog] = useState(false)
   const [showAssignmentDialog, setShowAssignmentDialog] = useState(false)
+  // Add a ref to track if dialog should be shown
+  const employeeDetailsVisible = useRef(false)
   
   // Initialize the modern employees page
   useEffect(() => {
     const cleanup = initializeEmployeesPage();
     return cleanup;
   }, []);
+  
+  // Ensure selection persists
+  useEffect(() => {
+    if (selectedEmployee) {
+      employeeDetailsVisible.current = true;
+    }
+  }, [selectedEmployee]);
+  
+  // Safe close handler that properly updates the state
+  const handleCloseEmployeeDetails = () => {
+    employeeDetailsVisible.current = false;
+    setSelectedEmployee(null);
+  };
   
   // Check user roles for permissions
   const isOwnerOrHeadManager = user?.role === "owner" || user?.role === "head_manager"
@@ -134,8 +149,8 @@ const Employees = () => {
       {selectedEmployee && (
         <EmployeeDetails
           employee={selectedEmployee}
-          isOpen={!!selectedEmployee}
-          onClose={() => setSelectedEmployee(null)}
+          isOpen={!!selectedEmployee && employeeDetailsVisible.current}
+          onClose={handleCloseEmployeeDetails}
           onDeactivate={() => setShowDeactivateDialog(true)}
           showDeactivateOption={canDeactivateEmployee(selectedEmployee)}
           showAssignOption={canAssignEmployee(selectedEmployee)}

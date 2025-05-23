@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <!-- Cache control -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>CleanTrack Control Center</title>
     <!-- Preload critical resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,6 +27,54 @@
           );
         }
       }(window.location))
+    </script>
+    <!-- Service Worker Registration -->
+    <script type="text/javascript">
+      // Register the Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+              console.log('Service Worker registered successfully:', registration.scope);
+            })
+            .catch(error => {
+              console.error('Service Worker registration failed:', error);
+            });
+        });
+
+        // Listen for messages from the Service Worker
+        navigator.serviceWorker.addEventListener('message', event => {
+          if (event.data && event.data.type === 'CACHE_CLEARED') {
+            console.log('Cache has been cleared by request');
+          }
+        });
+
+        // Force refresh on page load when needed
+        try {
+          // Check if we should force refresh
+          const lastRefresh = localStorage.getItem('last_forced_refresh');
+          const now = new Date().getTime();
+          // Force refresh once a day (86400000 ms)
+          if (!lastRefresh || (now - parseInt(lastRefresh, 10)) > 86400000) {
+            // Set timestamp first to prevent refresh loops
+            localStorage.setItem('last_forced_refresh', now.toString());
+            
+            // Clear service worker cache
+            navigator.serviceWorker.controller?.postMessage({
+              type: 'CLEAR_CACHE'
+            });
+            
+            // Only reload if not a fresh load
+            if (performance.navigation.type !== 1) { // type 1 is reload
+              console.log('Performing daily forced refresh for clean state');
+              // Use a delay to allow the cache clearing to complete
+              setTimeout(() => window.location.reload(true), 500);
+            }
+          }
+        } catch (err) {
+          console.error('Error checking forced refresh:', err);
+        }
+      }
     </script>
     <!-- Force CSS reset -->
     <style>

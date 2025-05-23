@@ -1,5 +1,6 @@
 import { User } from "@/contexts/auth-context"
 import { getInitials } from "@/lib/employee-utils"
+import { useCallback } from "react"
 
 interface ModernEmployeeCardProps {
   employee: User
@@ -34,17 +35,29 @@ export function ModernEmployeeCard({ employee, onClick }: ModernEmployeeCardProp
     }
   };
   
+  // Use memoized click handler to prevent unnecessary re-renders
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick();
+  }, [onClick]);
+  
+  // Keyboard event handler for accessibility
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  }, [onClick]);
+  
   return (
     <div 
       className="employee-card"
-      onClick={onClick}
+      onClick={handleClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          onClick();
-        }
-      }}
+      onKeyDown={handleKeyDown}
+      aria-label={`View details for ${employee.name}`}
     >
       <div className="employee-card-content">
         <div className="employee-avatar">

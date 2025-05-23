@@ -55,54 +55,50 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { setLoading } = useLoader();
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
 
   useEffect(() => {
     // Synchronize auth loading state with global loader
     setLoading(isLoading);
   }, [isLoading, setLoading]);
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        setIsLoading(true)
-        const currentUser = await authService.getCurrentUser()
-        
-        if (currentUser) {
-          const profile = await authService.getCurrentUserProfile()
-          if (profile) {
-            setUser({
-              id: profile.id,
-              email: profile.email,
-              name: profile.name,
-              role: profile.role,
-              supervisor_id: profile.supervisor_id,
-              manager_id: profile.manager_id,
-              is_active: profile.is_active,
-              avatar_url: profile.avatar_url,
-              status: profile.status
-            })
-          }
+  // Helper function to clear any cached auth data that might be corrupted
+  const clearCachedAuthData = useCallback(() => {
+    try {
+      console.log('Clearing cached auth data to ensure clean state...');
+      // Only clear specific auth-related items
+      const authKeys = ['supabase.auth.token', 'supabase.auth.refreshToken', 'sb-'];
+      Object.keys(localStorage).forEach(key => {
+        if (authKeys.some(prefix => key.startsWith(prefix))) {
+          localStorage.removeItem(key);
         }
-        
-        // Fetch all users
-        await fetchAllUsers()
-      } catch (err) {
-        console.error("Error initializing auth:", err)
-        setError("Failed to initialize authentication")
-      } finally {
-        setIsLoading(false)
-      }
+      });
+      return true;
+    } catch (err) {
+      console.error('Error clearing cached auth data:', err);
+      return false;
     }
+  }, []);
 
-    initializeAuth()
-
-    // Set up auth state change listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "SIGNED_IN" && session) {
+  useEffect(() => {
+    let isMounted = true;
+    
+    const initializeAuth = async () => {
+      if (!isMounted) return;
+      
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Check if Supabase is responding
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // We have a session, try to get the current user profile
           try {
-            const profile = await authService.getCurrentUserProfile()
-            if (profile) {
+            const profile = await authService.getCurrentUserProfile();
+            if (profile && isMounted) {
               setUser({
                 id: profile.id,
                 email: profile.email,
@@ -113,26 +109,122 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 is_active: profile.is_active,
                 avatar_url: profile.avatar_url,
                 status: profile.status
-              })
+              });
+              // Fetch all users after successfully getting profile
+              await fetchAllUsers();
+            }
+          } catch (profileErr) {
+            console.error("Error fetching user profile:", profileErr);
+            
+            // If we have a session but no profile, there might be a data mismatch
+            // Try to resolve by clearing local data and forcing reauth
+            if (retryCount < MAX_RETRIES) {
+              setRetryCount(prev => prev + 1);
+              clearCachedAuthData();
+              // Force refresh session
+              await supabase.auth.refreshSession();
+              // Retry initialization after a short delay
+              setTimeout(initializeAuth, 1000);
+              return;
             }
             
-            // Refresh the users list
-            await fetchAllUsers()
-          } catch (err) {
-            console.error("Error fetching user profile:", err)
-            setError("Failed to fetch user profile")
+            setError("Failed to fetch user profile. Please try logging in again.");
           }
-        } else if (event === "SIGNED_OUT") {
-          setUser(null)
+        } else {
+          // No active session, make sure user is null
+          if (isMounted) setUser(null);
+        }
+      } catch (err) {
+        console.error("Error initializing auth:", err);
+        
+        // Try to recover with a retry strategy
+        if (retryCount < MAX_RETRIES) {
+          setRetryCount(prev => prev + 1);
+          setTimeout(initializeAuth, 1000 * retryCount); // Exponential backoff
+          return;
+        }
+        
+        if (isMounted) {
+          setError("Failed to initialize authentication. Please reload the application.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
         }
       }
-    )
+    };
+
+    initializeAuth();
+
+    // Set up auth state change listener with improved error handling
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log(`Auth state changed: ${event}`);
+        
+        if (event === "SIGNED_IN" && session) {
+          try {
+            const profile = await authService.getCurrentUserProfile();
+            if (profile && isMounted) {
+              setUser({
+                id: profile.id,
+                email: profile.email,
+                name: profile.name,
+                role: profile.role,
+                supervisor_id: profile.supervisor_id,
+                manager_id: profile.manager_id,
+                is_active: profile.is_active,
+                avatar_url: profile.avatar_url,
+                status: profile.status
+              });
+              
+              // Refresh the users list
+              await fetchAllUsers();
+            }
+          } catch (err) {
+            console.error("Error fetching user profile:", err);
+            if (isMounted) {
+              setError("Failed to fetch user profile");
+            }
+          }
+        } else if (event === "SIGNED_OUT") {
+          if (isMounted) {
+            setUser(null);
+            // Clear cached users to avoid stale data
+            setUsers([]);
+          }
+        } else if (event === "TOKEN_REFRESHED") {
+          // Token refreshed successfully, make sure we have latest profile
+          try {
+            const currentUser = await authService.getCurrentUser();
+            if (currentUser) {
+              const profile = await authService.getCurrentUserProfile();
+              if (profile && isMounted) {
+                setUser({
+                  id: profile.id,
+                  email: profile.email,
+                  name: profile.name,
+                  role: profile.role,
+                  supervisor_id: profile.supervisor_id,
+                  manager_id: profile.manager_id,
+                  is_active: profile.is_active,
+                  avatar_url: profile.avatar_url,
+                  status: profile.status
+                });
+              }
+            }
+          } catch (err) {
+            console.error("Error refreshing profile after token refresh:", err);
+          }
+        }
+      }
+    );
 
     // Clean up the listener when the component unmounts
     return () => {
-      authListener?.subscription.unsubscribe()
-    }
-  }, [])
+      isMounted = false;
+      authListener?.subscription.unsubscribe();
+    };
+  }, [retryCount, clearCachedAuthData]);
 
   // Function to fetch all users
   const fetchAllUsers = async () => {

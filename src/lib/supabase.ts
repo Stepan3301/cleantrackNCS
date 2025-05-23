@@ -14,6 +14,34 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 console.log(`🔍 Initializing Supabase client for URL: ${supabaseUrl?.substring(0, 20)}...`);
 
+// Clear stale Supabase data on startup
+const clearStaleData = () => {
+  try {
+    // Get the last session time
+    const lastSessionTime = localStorage.getItem('supabase_session_timestamp');
+    if (lastSessionTime) {
+      const lastTime = parseInt(lastSessionTime, 10);
+      const now = Date.now();
+      // If the session is older than 1 day (86400000 ms), clear it
+      if (now - lastTime > 86400000) {
+        console.log('🧹 Clearing stale Supabase session data...');
+        // Only clear Supabase-related items, not entire localStorage
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('supabase.') || key === 'supabase_session_timestamp') {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+    }
+    // Set the current timestamp
+    localStorage.setItem('supabase_session_timestamp', Date.now().toString());
+  } catch (err) {
+    console.error('Failed to clear stale session data:', err);
+  }
+};
+
+clearStaleData();
+
 // Create client with enhanced session handling
 export const supabase = createClient<Database>(
   supabaseUrl, 
@@ -35,10 +63,13 @@ export const supabase = createClient<Database>(
       // Flowbite UI uses hash-based routing
       flowType: 'implicit'
     },
-    // Optimize data fetching with cache
+    // Optimize data fetching with proper cache control
     global: {
       headers: {
-        'Cache-Control': 'max-age=30'
+        // Use no-cache to ensure fresh data on each request
+        'Cache-Control': 'no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       }
     },
     // Add retries for network issues
@@ -46,6 +77,10 @@ export const supabase = createClient<Database>(
       params: {
         eventsPerSecond: 10
       }
+    },
+    // Better db error handling
+    db: {
+      schema: 'public'
     }
   }
 )
@@ -53,6 +88,9 @@ export const supabase = createClient<Database>(
 // Helper function to check Supabase connection
 export const checkSupabaseConnection = async () => {
   try {
+    // Attempt to refresh the session before checking it
+    await supabase.auth.refreshSession();
+    
     const { data, error } = await supabase.auth.getSession();
     if (error) {
       console.error('❌ Supabase connection check failed:', error);

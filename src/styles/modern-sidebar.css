@@ -219,83 +219,42 @@
 /* Sidebar hover behavior */
 @media (min-width: 801px) {
   .sidebar-nav {
-    width: 64px;
-    min-width: 64px;
-    padding: 0;
-    transition: width 0.3s ease-in-out, padding 0.3s ease-in-out;
+    width: 220px;
+    min-width: 220px;
+    padding: 0 0 24px 0;
+    transition: none;
   }
   
   .sidebar-nav .sidebar-logo span {
-    display: none;
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
-  }
-  
-  .sidebar-nav .sidebar-logo {
-    justify-content: center;
-    padding: 32px 0 28px 0;
-  }
-  
-  .sidebar-nav .sidebar-link {
-    padding: 12px 0 12px 0;
-    justify-content: center;
-    border-radius: 16px;
-    margin: 0 8px;
-  }
-  
-  .sidebar-nav .sidebar-link span {
-    display: none;
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
-  }
-  
-  .sidebar-nav .sidebar-user {
-    flex-direction: column;
-    padding: 16px 0;
-  }
-  
-  .sidebar-nav .sidebar-user-info {
-    display: none;
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
-  }
-  
-  /* Expanded state on hover */
-  .sidebar-nav:hover {
-    width: 220px;
-    padding: 0 0 24px 0;
-  }
-  
-  .sidebar-nav:hover .sidebar-logo span {
     display: block;
     opacity: 1;
   }
   
-  .sidebar-nav:hover .sidebar-logo {
+  .sidebar-nav .sidebar-logo {
     justify-content: flex-start;
     padding: 32px 0 28px 32px;
   }
   
-  .sidebar-nav:hover .sidebar-link {
-    padding: 12px 30px 12px 32px; /* Increased right padding */
+  .sidebar-nav .sidebar-link {
+    padding: 12px 30px 12px 32px;
     justify-content: flex-start;
     border-radius: 16px 0 0 16px;
     margin: 0;
-    width: calc(100% - 10px); /* Ensure no overflow in expanded state */
+    width: calc(100% - 10px);
   }
   
-  .sidebar-nav:hover .sidebar-link span {
+  .sidebar-nav .sidebar-link span {
     display: block;
     opacity: 1;
-    max-width: 160px; /* Ensure text fits in expanded sidebar */
+    max-width: 160px;
   }
   
-  .sidebar-nav:hover .sidebar-user {
+  .sidebar-nav .sidebar-user {
     flex-direction: row;
     padding: 16px 24px;
   }
   
-  .sidebar-nav:hover .sidebar-user-info {
+  .sidebar-nav .sidebar-user-info {
     display: flex;
     opacity: 1;
   }
