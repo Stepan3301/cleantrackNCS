@@ -1,73 +1,100 @@
-# Welcome to your Lovable project
+# CleanTrack Control Center
 
-## Project info
+An employee management application for CleanTrack that provides features for managing staff, tracking hours, monitoring tasks, and more.
 
-**URL**: https://lovable.dev/projects/cc30391d-b277-46ad-8d03-1024fd3573ec
+## Features
 
-## How can I edit this code?
+- Employee management with role-based access control
+- Hours tracking and calendar views
+- Task management
+- Announcements system
+- Profile management with image upload capability
+- Mobile-responsive design
 
-There are several ways of editing your application.
+## Technologies Used
 
-**Use Lovable**
+- React + TypeScript
+- Vite
+- Tailwind CSS
+- shadcn/ui components
+- Supabase for backend and authentication
+- Full Calendar for scheduling views
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/cc30391d-b277-46ad-8d03-1024fd3573ec) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Setup and Development
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Clone the repository
+git clone https://github.com/Stepan3301/cleantrackNCS.git
+cd cleantrackNCS
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Create a .env file with your Supabase credentials
+echo "VITE_SUPABASE_URL=your_supabase_url" > .env
+echo "VITE_SUPABASE_ANON_KEY=your_supabase_anon_key" >> .env
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Deployment
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+This project is set up to deploy to GitHub Pages using GitHub Actions.
 
-**Use GitHub Codespaces**
+### Manual Deployment
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+You can manually deploy the application using:
 
-## What technologies are used for this project?
+```sh
+npm run deploy
+```
 
-This project is built with:
+### GitHub Actions Deployment
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The project is configured to automatically deploy when changes are pushed to the main branch. To set this up:
 
-## How can I deploy this project?
+1. In your GitHub repository, go to Settings > Secrets and Variables > Actions
+2. Add the following secrets:
+   - `SUPABASE_URL`: Your Supabase project URL
+   - `SUPABASE_ANON_KEY`: Your Supabase anonymous key
+3. Enable GitHub Pages in Settings > Pages
+   - Set the source to "GitHub Actions"
 
-Simply open [Lovable](https://lovable.dev/projects/cc30391d-b277-46ad-8d03-1024fd3573ec) and click on Share -> Publish.
+## Database Setup
 
-## Can I connect a custom domain to my Lovable project?
+For profile images functionality:
 
-Yes, you can!
+```sql
+-- Add avatar_url column to profiles table
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+-- Create storage bucket for profile images
+INSERT INTO storage.buckets (id, name) 
+VALUES ('profile-images', 'Profile Images')
+ON CONFLICT DO NOTHING;
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+-- Set up storage bucket security policies
+CREATE POLICY "Allow public read access for profile images"
+ON storage.objects FOR SELECT USING (
+  bucket_id = 'profile-images'
+);
+
+CREATE POLICY "Allow authenticated users to upload profile images"
+ON storage.objects FOR INSERT WITH CHECK (
+  bucket_id = 'profile-images' 
+  AND auth.uid() = (storage.foldername(name))[1]::uuid
+);
+
+CREATE POLICY "Allow users to update their own profile images"
+ON storage.objects FOR UPDATE USING (
+  bucket_id = 'profile-images'
+  AND auth.uid() = (storage.foldername(name))[1]::uuid
+);
+
+CREATE POLICY "Allow users to delete their own profile images"
+ON storage.objects FOR DELETE USING (
+  bucket_id = 'profile-images'
+  AND auth.uid() = (storage.foldername(name))[1]::uuid
+);
+```
