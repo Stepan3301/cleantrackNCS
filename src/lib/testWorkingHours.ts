@@ -8,7 +8,7 @@ export const testWorkingHoursTable = async () => {
     // First, check if the working_hours table exists
     console.log("Checking if working_hours table exists...");
     const { data, error } = await supabase
-      .from('working_hours')
+      .from('work_time')
       .select('*');
     
     if (error) {

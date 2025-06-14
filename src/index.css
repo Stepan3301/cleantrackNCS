@@ -101,3 +101,53 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Базовые мобильные стили */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px; /* Уменьшение базового размера шрифта */
+  }
+  
+  body {
+    overflow-x: hidden; /* Предотвращение горизонтального скролла */
+  }
+  
+  /* Увеличение размеров touch-элементов */
+  button, 
+  [role="button"], 
+  input[type="submit"], 
+  input[type="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px 16px;
+  }
+  
+  /* Оптимизация форм */
+  input, 
+  textarea, 
+  select {
+    font-size: 16px; /* Предотвращение zoom на iOS */
+    padding: 12px;
+  }
+  
+  /* Адаптивные отступы */
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* Стили для очень маленьких экранов */
+@media (max-width: 480px) {
+  html {
+    font-size: 13px;
+  }
+  
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .md\:grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+}

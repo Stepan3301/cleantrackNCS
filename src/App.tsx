@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState, useRef } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/auth-context';
@@ -42,14 +42,42 @@ function App() {
   console.log(`[App] Rendering App component at ${new Date().toISOString()}`);
   const [isHealthy, setIsHealthy] = useState<boolean>(true);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [loadTimeoutExpired, setLoadTimeoutExpired] = useState<boolean>(false);
+  const intervalIdRef = useRef<number | undefined>();
+  const initTimeoutRef = useRef<number | undefined>(); 
+  
+  // Add safety timeout to break out of loading state if initialization takes too long
+  useEffect(() => {
+    console.log('[App] Setting up safety timeout for app initialization');
+    
+    // Clear any existing timeout first
+    if (initTimeoutRef.current) {
+      window.clearTimeout(initTimeoutRef.current);
+    }
+    
+    // Set a timeout to break out of loading state if initialization takes too long
+    initTimeoutRef.current = window.setTimeout(() => {
+      console.log('[App] Initialization safety timeout triggered after 10 seconds');
+      setLoadTimeoutExpired(true);
+      setIsInitialized(true); // Force initialization to proceed even if failed
+    }, 10000); // 10 seconds timeout
+    
+    return () => {
+      if (initTimeoutRef.current) {
+        window.clearTimeout(initTimeoutRef.current);
+      }
+    };
+  }, []);
   
   // Check Supabase connectivity
   useEffect(() => {
     console.log('[App] Running connectivity check effect');
     let isMounted = true;
-    let intervalId: number | undefined;
     
     const checkConnectivity = async () => {
+      // Skip if app has already initialized to prevent duplicate checks
+      if (isInitialized && !isMounted) return;
+      
       console.log('[App] Performing connectivity check');
       try {
         // Simple connectivity check
@@ -57,7 +85,11 @@ function App() {
         
         if (error) {
           console.error('[App] Supabase connectivity check failed:', error);
-          if (isMounted) setIsHealthy(false);
+          if (isMounted) {
+            setIsHealthy(false);
+            // We've confirmed there is an error, so we can set initialized
+            setIsInitialized(true);
+          }
         } else {
           console.log('[App] Connectivity check successful');
           // Connection is good
@@ -65,15 +97,16 @@ function App() {
             setIsHealthy(true);
             // Clear any stored connectivity issues
             clearConnectivityIssue();
+            // Mark as initialized
+            setIsInitialized(true);
           }
         }
       } catch (err) {
         console.error('[App] Unexpected error during connectivity check:', err);
-        if (isMounted) setIsHealthy(false);
-      } finally {
         if (isMounted) {
+          setIsHealthy(false);
+          // Even though there's an error, mark as initialized so user can proceed
           setIsInitialized(true);
-          console.log('[App] App initialized, health status:', isHealthy);
         }
       }
     };
@@ -82,7 +115,8 @@ function App() {
     checkConnectivity();
     
     // Set up an interval to check periodically - use window.setInterval for proper typing
-    intervalId = window.setInterval(checkConnectivity, 30000); // every 30 seconds
+    // Store the interval ID in the ref to safely clear it later
+    intervalIdRef.current = window.setInterval(checkConnectivity, 30000); // every 30 seconds
     
     // Log performance metrics
     const loadTime = performance.now() - startTime;
@@ -91,9 +125,24 @@ function App() {
     return () => {
       console.log('[App] Cleaning up connectivity check effect');
       isMounted = false;
-      if (intervalId) window.clearInterval(intervalId);
+      if (intervalIdRef.current) {
+        window.clearInterval(intervalIdRef.current);
+        intervalIdRef.current = undefined;
+      }
     };
   }, []);
+  
+  // Always proceed with rendering if timeout expires, regardless of initialization
+  if (loadTimeoutExpired && !isInitialized) {
+    console.log('[App] Load timeout expired, forcing app to proceed');
+    return (
+      <LoadingFallback 
+        message="App is taking longer than expected to initialize. Please try refreshing the page."
+        retryEnabled={true}
+        troubleshootEnabled={true}
+      />
+    );
+  }
   
   // Show loading/error state
   if (!isInitialized) {

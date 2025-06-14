@@ -16,6 +16,7 @@ import {
 import { useEffect } from "react";
 import { useMobileNav } from "./ModernLayout";
 
+
 export function MobileNavigation() {
   const navigate = useNavigate();
   const location = useLocation();

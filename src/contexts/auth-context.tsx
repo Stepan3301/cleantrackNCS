@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from "react"
+import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback, useRef } from "react"
 import { authService } from "@/lib/auth-service"
 import { Profile } from "@/types/database.types"
 import { supabase } from "@/lib/supabase"
@@ -57,6 +57,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { setLoading } = useLoader();
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 3;
+  
+  // Add refs to track state changes and prevent loops
+  const authInitialized = useRef(false);
+  const lastAuthEvent = useRef<string | null>(null);
+  const authEventTimestamp = useRef<number>(0);
+  const processingAuthChange = useRef(false);
+
+  // Debounce auth event processing to prevent rapid firing
+  const debounceAuthChange = (event: string): boolean => {
+    const now = Date.now();
+    if (
+      lastAuthEvent.current === event && 
+      now - authEventTimestamp.current < 2000 // 2 second debounce
+    ) {
+      console.log(`Debounced duplicate auth event: ${event}`);
+      return false;
+    }
+    
+    lastAuthEvent.current = event;
+    authEventTimestamp.current = now;
+    return true;
+  };
 
   useEffect(() => {
     // Synchronize auth loading state with global loader
@@ -64,7 +86,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [isLoading, setLoading]);
 
   // Helper function to clear any cached auth data that might be corrupted
-  const clearCachedAuthData = () => {
+  const clearCachedAuthData = useCallback(() => {
     try {
       console.log('Clearing cached auth data to ensure clean state...');
       // Only clear specific auth-related items
@@ -83,13 +105,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.error('Error clearing cached auth data:', err);
       return false;
     }
-  };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
     
+    // Prevent duplicate initialization
+    if (authInitialized.current) {
+      console.log('Auth already initialized, skipping duplicate initialization');
+      return;
+    }
+    
+    authInitialized.current = true;
+    
     const initializeAuth = async () => {
       if (!isMounted) return;
+      
+      // Prevent concurrent processing
+      if (processingAuthChange.current) {
+        console.log('Already processing auth change, skipping duplicate initialization');
+        return;
+      }
+      
+      processingAuthChange.current = true;
       
       try {
         setIsLoading(true);
@@ -154,6 +192,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } finally {
         if (isMounted) {
           setIsLoading(false);
+          processingAuthChange.current = false;
         }
       }
     };
@@ -165,42 +204,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       async (event, session) => {
         console.log(`Auth state changed: ${event}`);
         
-        if (event === "SIGNED_IN" && session) {
-          try {
-            const profile = await authService.getCurrentUserProfile();
-            if (profile && isMounted) {
-              setUser({
-                id: profile.id,
-                email: profile.email,
-                name: profile.name,
-                role: profile.role,
-                supervisor_id: profile.supervisor_id,
-                manager_id: profile.manager_id,
-                is_active: profile.is_active,
-                avatar_url: profile.avatar_url,
-                status: profile.status
-              });
-              
-              // Refresh the users list
-              await fetchAllUsers();
-            }
-          } catch (err) {
-            console.error("Error fetching user profile:", err);
-            if (isMounted) {
-              setError("Failed to fetch user profile");
-            }
-          }
-        } else if (event === "SIGNED_OUT") {
-          if (isMounted) {
-            setUser(null);
-            // Clear cached users to avoid stale data
-            setUsers([]);
-          }
-        } else if (event === "TOKEN_REFRESHED") {
-          // Token refreshed successfully, make sure we have latest profile
-          try {
-            const currentUser = await authService.getCurrentUser();
-            if (currentUser) {
+        // Debounce auth events to prevent loops
+        if (!debounceAuthChange(event) || processingAuthChange.current) {
+          console.log(`Skipping duplicate/rapid auth event: ${event}`);
+          return;
+        }
+        
+        processingAuthChange.current = true;
+        
+        try {
+          if (event === "SIGNED_IN" && session) {
+            try {
               const profile = await authService.getCurrentUserProfile();
               if (profile && isMounted) {
                 setUser({
@@ -214,10 +228,53 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                   avatar_url: profile.avatar_url,
                   status: profile.status
                 });
+                
+                // Refresh the users list
+                await fetchAllUsers();
+              }
+            } catch (err) {
+              console.error("Error fetching user profile:", err);
+              if (isMounted) {
+                setError("Failed to fetch user profile");
               }
             }
-          } catch (err) {
-            console.error("Error refreshing profile after token refresh:", err);
+          } else if (event === "SIGNED_OUT") {
+            if (isMounted) {
+              setUser(null);
+              // Clear cached users to avoid stale data
+              setUsers([]);
+            }
+          } else if (event === "TOKEN_REFRESHED") {
+            // Token refreshed successfully, make sure we have latest profile
+            try {
+              const currentUser = await authService.getCurrentUser();
+              if (currentUser) {
+                const profile = await authService.getCurrentUserProfile();
+                if (profile && isMounted) {
+                  setUser({
+                    id: profile.id,
+                    email: profile.email,
+                    name: profile.name,
+                    role: profile.role,
+                    supervisor_id: profile.supervisor_id,
+                    manager_id: profile.manager_id,
+                    is_active: profile.is_active,
+                    avatar_url: profile.avatar_url,
+                    status: profile.status
+                  });
+                }
+              }
+            } catch (err) {
+              console.error("Error refreshing profile after token refresh:", err);
+            }
+          } else if (event === "INITIAL_SESSION") {
+            // This is fired on first page load - don't need to do anything special
+            // It's handled by our initializeAuth function already
+            console.log("Received INITIAL_SESSION event, already handled by initialization");
+          }
+        } finally {
+          if (isMounted) {
+            processingAuthChange.current = false;
           }
         }
       }
