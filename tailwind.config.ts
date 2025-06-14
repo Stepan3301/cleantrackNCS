@@ -19,6 +19,23 @@ export default {
 			}
 		},
 		extend: {
+			screens: {
+				'xs': '475px',
+				'mobile': {'max': '767px'},
+				'tablet': {'min': '768px', 'max': '1023px'},
+			},
+			spacing: {
+				'safe-top': 'env(safe-area-inset-top)',
+				'safe-bottom': 'env(safe-area-inset-bottom)',
+				'safe-left': 'env(safe-area-inset-left)',
+				'safe-right': 'env(safe-area-inset-right)',
+			},
+			minHeight: {
+				'touch': '44px',
+			},
+			minWidth: {
+				'touch': '44px',
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
