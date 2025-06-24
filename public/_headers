@@ -1,0 +1,11 @@
+# Cache control headers for API/data endpoints
+/api/*
+  Cache-Control: no-cache, no-store, must-revalidate
+/rest/*
+  Cache-Control: no-cache, no-store, must-revalidate
+/auth/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# Allow service worker cache for static assets
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable 

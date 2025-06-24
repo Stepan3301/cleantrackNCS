@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { User } from "@/contexts/auth-context";
 import { WorkTimeRecord } from "@/lib/services/work-time-service";
-import { format, startOfMonth, endOfMonth, isValid, getDate } from "date-fns";
+import { startOfMonth, endOfMonth, isValid } from "date-fns";
+import { dateUtils } from "@/lib/utils/date";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,8 @@ import { Loader2, Clock, MapPin, FileText, User as UserIcon, CalendarIcon } from
 import { Progress } from "@/components/ui/progress";
 import { targetHoursService } from "@/lib/services/target-hours-service";
 import { Card } from "@/components/ui/card";
+import { useDevice } from "@/contexts/device-context";
+import { MobileHoursForm } from "@/components/mobile/MobileHoursForm";
 
 // Record details component
 interface RecordDetailsProps {
@@ -37,7 +40,7 @@ const RecordDetailsView: React.FC<RecordDetailsProps> = ({ record }) => {
           <CalendarIcon className="h-5 w-5 text-primary mt-0.5" />
           <div>
             <div className="text-sm font-medium">Date</div>
-            <div>{format(new Date(record.date), 'MMMM d, yyyy')}</div>
+            <div>{dateUtils.formatToString(dateUtils.parseLocalDate(record.date))}</div>
           </div>
         </div>
         
@@ -78,7 +81,7 @@ const RecordDetailsView: React.FC<RecordDetailsProps> = ({ record }) => {
         </div>
         
         <div className="text-xs text-muted-foreground mt-2">
-          Created: {format(new Date(record.created_at), 'MMMM d, yyyy h:mm a')}
+          Created: {new Date(record.created_at).toLocaleString()}
         </div>
       </div>
     </Card>
@@ -100,6 +103,7 @@ export const StaffHoursView = ({
   onHourSubmission,
   isSubmitting
 }: StaffHoursViewProps) => {
+  const { isMobile } = useDevice();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [hours, setHours] = useState<string>("");
   const [location, setLocation] = useState<string>("");
@@ -113,7 +117,7 @@ export const StaffHoursView = ({
   useEffect(() => {
     if (selectedDate) {
       // Format date as YYYY-MM-DD to match record format
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const dateStr = dateUtils.formatToString(selectedDate);
       
       // Find record for this user and date
       const record = workTimeRecords.find(r => 
@@ -135,7 +139,7 @@ export const StaffHoursView = ({
       try {
         // Get current month in YYYY-MM format
         const currentMonth = new Date();
-        const period = format(currentMonth, 'yyyy-MM');
+        const period = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
         
         // Fetch target hours for all staff for this period
         const targets = await targetHoursService.getTargetHoursByStaffId(user.id);
@@ -147,7 +151,7 @@ export const StaffHoursView = ({
         
         const total = workTimeRecords
           .filter(r => {
-            const recordDate = new Date(r.date);
+            const recordDate = dateUtils.parseLocalDate(r.date);
             return (
               recordDate >= monthStart && 
               recordDate <= monthEnd && 
@@ -177,7 +181,7 @@ export const StaffHoursView = ({
       .map(record => {
         try {
           if (!record.date) return null;
-          return new Date(record.date);
+          return dateUtils.parseLocalDate(record.date);
         } catch (err) {
           console.error(`Error formatting record date: ${err}`);
           return null;
@@ -188,7 +192,7 @@ export const StaffHoursView = ({
 
   // Get hours for a specific date
   const getHoursForDate = (date: Date): number | undefined => {
-    const dateStr = format(date, 'yyyy-MM-dd');
+    const dateStr = dateUtils.formatToString(date);
     const record = workTimeRecords.find(r => 
       r.user_id === user.id && r.date === dateStr
     );
@@ -210,31 +214,27 @@ export const StaffHoursView = ({
     setDescription("");
   };
 
+  const handleMobileSubmit = (data: { date: string; hours: number; location: string; description: string }) => {
+    const date = dateUtils.parseLocalDate(data.date);
+    onHourSubmission(date, data.hours, data.location, data.description);
+  };
+
   // Get today's records
-  const todayRecords = workTimeRecords.filter(record => {
-    const recordDate = new Date(record.date);
-    const today = new Date();
-    return recordDate.getDate() === today.getDate() &&
-           recordDate.getMonth() === today.getMonth() &&
-           recordDate.getFullYear() === today.getFullYear() &&
-           record.user_id === user.id;
-  });
+  const todayRecords = workTimeRecords.filter(record => 
+    dateUtils.isSameDay(record.date, new Date()) && record.user_id === user.id
+  );
 
   const totalHoursToday = todayRecords.reduce((total, record) => total + record.hours_worked, 0);
   
   const disableDaysWithoutRecords = (date: Date) => {
     // Always allow today
-    const today = new Date();
-    const isToday = date.getDate() === today.getDate() &&
-                   date.getMonth() === today.getMonth() &&
-                   date.getFullYear() === today.getFullYear();
-    
-    if (isToday) return false;
+    if (dateUtils.isSameDay(date, new Date())) {
+      return false;
+    }
     
     // Check if there's a record for this date
-    const dateStr = format(date, 'yyyy-MM-dd');
     const hasRecord = workTimeRecords.some(r => 
-      r.user_id === user.id && r.date === dateStr
+      r.user_id === user.id && dateUtils.isSameDay(r.date, date)
     );
     
     // Allow dates with records, disable dates without records
@@ -281,7 +281,7 @@ export const StaffHoursView = ({
               components={{
                 DayContent: ({ date }) => (
                   <div className="day-content-wrapper">
-                    <div>{getDate(date)}</div>
+                    <div>{date.getDate()}</div>
                     {getHoursForDate(date) !== undefined && (
                       <div className="hours-indicator">
                         {getHoursForDate(date)}h
@@ -309,7 +309,13 @@ export const StaffHoursView = ({
         
         {/* Hours Entry and Details Column */}
         <div className="lg:w-1/2 w-full">
-          {selectedRecord ? (
+          {isMobile ? (
+            <MobileHoursForm 
+              onSubmit={handleMobileSubmit} 
+              isLoading={isSubmitting} 
+              initialDate={selectedDate ? dateUtils.formatToString(selectedDate) : undefined}
+            />
+          ) : selectedRecord ? (
             <div className="record-details-view">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-primary">Record Details</h2>
@@ -333,7 +339,7 @@ export const StaffHoursView = ({
                     Selected Date
                   </label>
                   <div className="flex items-center h-10 px-3 border rounded-md bg-gray-50">
-                    {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : 'Please select a date'}
+                    {selectedDate ? dateUtils.formatToString(selectedDate) : 'Please select a date'}
                   </div>
                 </div>
 

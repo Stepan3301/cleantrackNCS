@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/auth-context";
+import { useAuth, User } from "@/contexts/auth-context";
 import { 
   LayoutDashboard, 
   Users, 
@@ -20,10 +20,14 @@ import { Badge } from "@/components/ui/badge";
 import '../styles/modern-sidebar.css';
 import { setupSidebarNavigation } from "@/lib/sidebar-utils";
 
-export function ModernAppSidebar() {
+interface ModernAppSidebarProps {
+  user: User;
+  logout: () => void;
+}
+
+export function ModernAppSidebar({ user, logout }: ModernAppSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   
   // If no user (not logged in), don't show the sidebar
@@ -248,7 +252,7 @@ export function ModernAppSidebar() {
         {/* Logout - For all users */}
         <a 
           href="#" 
-          className="sidebar-link logout"
+          className="sidebar-link"
           onClick={(e) => { e.preventDefault(); handleLogout(); }}
         >
           <div className="sidebar-icon">

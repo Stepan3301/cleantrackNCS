@@ -14,7 +14,7 @@ import {
   Menu
 } from "lucide-react";
 import { useEffect } from "react";
-import { useMobileNav } from "./ModernLayout";
+import { useMobileNav } from "@/contexts/mobile-nav-context";
 
 
 export function MobileNavigation() {

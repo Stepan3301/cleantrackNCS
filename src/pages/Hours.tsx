@@ -10,7 +10,8 @@ import { ModernFullCalendarHours } from "@/components/hours/ModernFullCalendarHo
 import { User } from "@/contexts/auth-context";
 import { useState, useEffect } from "react";
 import { workTimeService, WorkTimeInput, WorkTimeRecord } from "@/lib/services/work-time-service";
-import { format, getDate, isValid } from "date-fns";
+import { isValid } from "date-fns";
+import { dateUtils } from "@/lib/utils/date";
 import ErrorBoundary from "../ErrorBoundary";
 import { supabase } from "@/lib/supabase";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -183,7 +184,7 @@ const Hours = () => {
 
     try {
       // Format the date
-      const formattedDate = format(date, 'yyyy-MM-dd');
+      const formattedDate = dateUtils.formatToString(date);
       
       // Ensure hours is a number before submission
       const hoursNumber = Number(hours);
@@ -206,7 +207,7 @@ const Hours = () => {
 
       toast({
         title: "Hours submitted",
-        description: `Successfully submitted ${hoursNumber} hours for ${format(date, 'MMM d, yyyy')} at ${location}`,
+        description: `Successfully submitted ${hoursNumber} hours for ${formattedDate} at ${location}`,
       });
     } catch (err) {
       console.error("Error submitting hours:", err);
@@ -258,7 +259,7 @@ const Hours = () => {
 
     try {
       // Format the date
-      const formattedDate = format(date, 'yyyy-MM-dd');
+      const formattedDate = dateUtils.formatToString(date);
       
       // Submit using supervisor record creation
       await workTimeService.createSupervisorRecord(
@@ -325,59 +326,57 @@ const Hours = () => {
 
   // Calculate total hours and get cell color for ManagerHoursView and HeadManagerHoursView
   const calculateTotalHours = (staffId: string) => {
-    const records = filteredRecords.filter(r => r.user_id === staffId);
-    return records.reduce((sum, r) => sum + r.hours_worked, 0);
+    return filteredRecords
+      .filter(r => r.user_id === staffId)
+      .reduce((acc, r) => acc + (r.hours_worked || 0), 0);
   };
 
   const getCellColor = (staffId: string, day: number) => {
-    const record = filteredRecords.find(r => 
-      r.user_id === staffId && 
-      getDate(new Date(r.date)) === day
-    );
+    const record = filteredRecords.find(r => {
+      try {
+        const recordDay = dateUtils.getDayFromString(r.date);
+        return r.user_id === staffId && recordDay === day;
+      } catch (error) {
+        console.error('Error processing record date:', r.date, error);
+        return false;
+      }
+    });
+    
     return record ? 'bg-green-100' : '';
   };
 
   // Improved function to transform workTimeRecords into the hoursData format
   const formatHoursDataForUser = (userId: string, records: WorkTimeRecord[] = []) => {
-    // Filter records for this user and group by date
-    const userRecords = records.filter(record => record.user_id === userId);
-    const result: Record<string, {
-      hours: number;
-      location: string;
+    // If no records are provided, use the component's state
+    const userRecords = records.length > 0 
+      ? records.filter(r => r.user_id === userId)
+      : filteredRecords.filter(r => r.user_id === userId);
+
+    if (!userRecords.length) {
+      return DEFAULT_HOURS_DATA; // Return default empty object
+    }
+
+    const formattedData: Record<string, {
+      hours?: number;
+      location?: string;
       description?: string;
-      submittedBy?: string;
-      submittedOn?: Date;
     }> = {};
 
-    // Process each record
-    userRecords.forEach(record => {
-      try {
-        // Get just the day number from the date
-        const date = new Date(record.date);
-        if (!isValid(date)) {
-          console.error(`Invalid date format for record: ${record.date}`);
-          return;
-        }
+    for (const record of userRecords) {
+      if (isValid(new Date(record.date))) {
+        // We need to adjust for timezones by creating the date as local
+        const recordDate = dateUtils.parseLocalDate(record.date);
+        const formattedDate = dateUtils.formatToString(recordDate);
         
-        const day = getDate(date);
-        
-        // Check if we already have a record for this day
-        // If already exists but this is an approved record, it takes precedence
-        if (!result[day] || (record.status === 'approved' && result[day].submittedBy !== 'approved')) {
-          result[day] = {
-            hours: record.hours_worked,
-            location: record.location || 'Unknown',
-            description: record.description,
-            submittedBy: record.record_type === 'self' ? 'Self' : 'Supervisor',
-            submittedOn: new Date(record.created_at)
-          };
-        }
-      } catch (err) {
-        console.error(`Error processing record: ${err}`);
+        formattedData[formattedDate] = {
+          hours: record.hours_worked,
+          location: record.location,
+          description: record.description
+        };
       }
-    });
+    }
     
-    return result;
+    return formattedData;
   };
 
   // Render supervisor filter for manager+ roles
@@ -406,6 +405,14 @@ const Hours = () => {
       </div>
     );
   };
+
+  // Format all hours data for manager/head_manager views
+  const allHoursData = user.role === 'manager' || user.role === 'head_manager' || user.role === 'owner'
+    ? users.reduce((acc, u) => {
+        acc[u.id] = formatHoursDataForUser(u.id, filteredRecords);
+        return acc;
+      }, {} as Record<string, any>)
+    : {};
 
   return (
     <div className="dashboard-layout dashboard-container space-y-6 px-1 sm:px-2 md:px-4 max-w-screen-xl mx-auto">

@@ -4,7 +4,7 @@ import { WorkTimeRecord } from '@/lib/services/work-time-service';
 import HoursEntryForm from './HoursEntryForm';
 import { StaffDashboard } from './StaffDashboard';
 import ModernCalendar from '@/components/ui/modern-calendar';
-import { format } from 'date-fns';
+import { dateUtils } from '@/lib/utils/date';
 import { Clock, MapPin, FileText, User, CalendarIcon } from 'lucide-react';
 
 // New component to display record details
@@ -22,7 +22,7 @@ const RecordDetailsView: React.FC<RecordDetailsViewProps> = ({ record }) => {
           <CalendarIcon className="h-5 w-5 text-primary mt-0.5" />
           <div>
             <div className="text-sm font-medium">Date</div>
-            <div>{format(new Date(record.date), 'MMMM d, yyyy')}</div>
+            <div>{dateUtils.formatToString(dateUtils.parseLocalDate(record.date))}</div>
           </div>
         </div>
         
@@ -63,7 +63,7 @@ const RecordDetailsView: React.FC<RecordDetailsViewProps> = ({ record }) => {
         </div>
         
         <div className="text-xs text-muted-foreground mt-2">
-          Created: {format(new Date(record.created_at), 'MMMM d, yyyy h:mm a')}
+          Created: {new Date(record.created_at).toLocaleString()}
         </div>
       </div>
     </div>
@@ -115,7 +115,7 @@ export const ModernFullCalendarHours: React.FC<ModernFullCalendarHoursProps> = (
     for (const [day, data] of Object.entries(hoursData)) {
       // Create date for this day in the current month
       const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), parseInt(day));
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = dateUtils.formatToString(date);
       
       result[dateStr] = {
         hours: data.hours,
@@ -134,7 +134,7 @@ export const ModernFullCalendarHours: React.FC<ModernFullCalendarHoursProps> = (
       const dayData = hoursData[day];
       
       // Find record for the selected date
-      const dateStr = selectedDate.toISOString().split('T')[0];
+      const dateStr = dateUtils.formatToString(selectedDate);
       const recordForDate = workTimeRecords.find(record => record.date === dateStr);
       
       setSelectedRecord(recordForDate || null);
@@ -173,15 +173,11 @@ export const ModernFullCalendarHours: React.FC<ModernFullCalendarHoursProps> = (
     }
     
     // Only allow selection of current day for submissions
-    const today = new Date();
-    const isToday = 
-      date.getDate() === today.getDate() && 
-      date.getMonth() === today.getMonth() && 
-      date.getFullYear() === today.getFullYear();
+    const isToday = dateUtils.isSameDay(date, new Date());
     
     if (!isToday) {
       // For non-current days, check if there's a record to display
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = dateUtils.formatToString(date);
       const recordForDate = workTimeRecords.find(record => record.date === dateStr);
       
       if (recordForDate) {
@@ -211,11 +207,7 @@ export const ModernFullCalendarHours: React.FC<ModernFullCalendarHoursProps> = (
     }
 
     // Verify that the selected date is the current day
-    const today = new Date();
-    const isToday = 
-      selectedDate.getDate() === today.getDate() && 
-      selectedDate.getMonth() === today.getMonth() && 
-      selectedDate.getFullYear() === today.getFullYear();
+    const isToday = dateUtils.isSameDay(selectedDate, new Date());
 
     if (!isToday) {
       toast({

@@ -1,14 +1,15 @@
 import React, { Suspense, lazy, useEffect, useState, useRef } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/contexts/auth-context';
+import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { LoaderProvider } from '@/contexts/loader-context';
 import { AnnouncementsProvider } from '@/contexts/announcements-context';
 import ProtectedRoute, { UserRole } from '@/components/ProtectedRoute';
-import ModernLayout from '@/components/ModernLayout';
 import { LoadingFallback } from '@/components/LoadingFallback';
 import { hasConnectivityIssues, isAfterCleanReload, clearConnectivityIssue } from '@/lib/cache-manager';
 import { supabase } from '@/lib/supabase';
+import { AdaptiveLayout } from './components/layouts/AdaptiveLayout';
+import { DeviceProvider } from './contexts/device-context';
 
 // Application version for diagnostic purposes
 const APP_VERSION = '1.0.1'; // Increment this when making significant changes
@@ -37,6 +38,127 @@ const ManageRoles = lazy(() => import('@/pages/ManageRoles'));
 
 // Import ThemeProvider
 import { ThemeProvider } from '@/contexts/theme-provider';
+
+const AppRoutes = () => {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/" element={<HomepageLogin />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/waiting-approval" element={<WaitingApproval />} />
+        {/* Redirect any other path to login */}
+        <Route path="*" element={<HomepageLogin />} />
+      </Routes>
+    )
+  }
+
+  return (
+    <AdaptiveLayout user={user}>
+      <Routes>
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/hours"
+          element={
+            <ProtectedRoute>
+              <Hours />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/staff-hours"
+          element={
+            <ProtectedRoute roles={[UserRole.MANAGER, UserRole.HEAD_MANAGER, UserRole.OWNER]}>
+              <StaffHours />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/employees"
+          element={
+            <ProtectedRoute roles={[UserRole.SUPERVISOR, UserRole.MANAGER, UserRole.HEAD_MANAGER, UserRole.OWNER]}>
+              <Employees />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bonuses"
+          element={
+            <ProtectedRoute roles={[UserRole.MANAGER, UserRole.HEAD_MANAGER, UserRole.OWNER]}>
+              <Bonuses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/targets"
+          element={
+            <ProtectedRoute roles={[UserRole.MANAGER, UserRole.HEAD_MANAGER, UserRole.OWNER]}>
+              <Targets />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/announcements"
+          element={
+            <ProtectedRoute>
+              <Announcements />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/request-leave"
+          element={
+            <ProtectedRoute roles={[UserRole.STAFF, UserRole.SUPERVISOR]}>
+              <RequestLeave />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manage-leave"
+          element={
+            <ProtectedRoute roles={[UserRole.MANAGER, UserRole.HEAD_MANAGER, UserRole.OWNER]}>
+              <ManageLeaveRequests />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/registration-requests"
+          element={
+            <ProtectedRoute roles={[UserRole.MANAGER, UserRole.HEAD_MANAGER, UserRole.OWNER]}>
+              <RegistrationRequests />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manage-roles"
+          element={
+            <ProtectedRoute roles={[UserRole.OWNER, UserRole.HEAD_MANAGER]}>
+              <ManageRoles />
+            </ProtectedRoute>
+          }
+        />
+        {/* Fallback route */}
+        <Route path="*" element={<Dashboard />} />
+      </Routes>
+    </AdaptiveLayout>
+  );
+}
 
 function App() {
   console.log(`[App] Rendering App component at ${new Date().toISOString()}`);
@@ -186,154 +308,12 @@ function App() {
       <ThemeProvider defaultTheme="light" storageKey="cleantrack-theme">
         <LoaderProvider>
           <AuthProvider>
-            <AnnouncementsProvider>
-              <Routes>
-                <Route path="/" element={<HomepageLogin />} />
-                <Route path="/signup" element={<SignUp />} />
-                <Route path="/waiting-approval" element={<WaitingApproval />} />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <ModernLayout>
-                        <Dashboard />
-                      </ModernLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/hours"
-                  element={
-                    <ProtectedRoute>
-                      <ModernLayout>
-                        <Hours />
-                      </ModernLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/staff-hours"
-                  element={
-                    <ProtectedRoute roles={[UserRole.MANAGER, UserRole.HEAD_MANAGER, UserRole.OWNER]}>
-                      <ModernLayout>
-                        <StaffHours />
-                      </ModernLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/employees"
-                  element={
-                    <ProtectedRoute roles={[UserRole.SUPERVISOR, UserRole.MANAGER, UserRole.HEAD_MANAGER, UserRole.OWNER]}>
-                      <ModernLayout>
-                        <Employees />
-                      </ModernLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/bonuses"
-                  element={
-                    <ProtectedRoute roles={[UserRole.MANAGER, UserRole.HEAD_MANAGER, UserRole.OWNER]}>
-                      <ModernLayout>
-                        <Bonuses />
-                      </ModernLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/targets"
-                  element={
-                    <ProtectedRoute roles={[UserRole.MANAGER, UserRole.HEAD_MANAGER, UserRole.OWNER]}>
-                      <ModernLayout>
-                        <Targets />
-                      </ModernLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/announcements"
-                  element={
-                    <ProtectedRoute roles={[UserRole.HEAD_MANAGER, UserRole.OWNER]}>
-                      <ModernLayout>
-                        <Announcements />
-                      </ModernLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/manage-roles"
-                  element={
-                    <ProtectedRoute roles={[UserRole.HEAD_MANAGER, UserRole.OWNER]}>
-                      <ModernLayout>
-                        <ManageRoles />
-                      </ModernLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/reports"
-                  element={
-                    <ProtectedRoute roles={[UserRole.MANAGER, UserRole.HEAD_MANAGER, UserRole.OWNER]}>
-                      <ModernLayout>
-                        <Reports />
-                      </ModernLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/leave/request"
-                  element={
-                    <ProtectedRoute>
-                      <ModernLayout>
-                        <RequestLeave />
-                      </ModernLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/leave/manage"
-                  element={
-                    <ProtectedRoute roles={[UserRole.SUPERVISOR, UserRole.MANAGER, UserRole.HEAD_MANAGER, UserRole.OWNER]}>
-                      <ModernLayout>
-                        <ManageLeaveRequests />
-                      </ModernLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/registration-requests"
-                  element={
-                    <ProtectedRoute roles={[UserRole.HEAD_MANAGER, UserRole.OWNER]}>
-                      <ModernLayout>
-                        <RegistrationRequests />
-                      </ModernLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/settings"
-                  element={
-                    <ProtectedRoute>
-                      <ModernLayout>
-                        <Settings />
-                      </ModernLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                {/* 404 catch-all route */}
-                <Route path="*" element={
-                  <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-cyan-50 to-blue-100">
-                    <h1 className="text-3xl font-bold text-primary mb-4">Page Not Found</h1>
-                    <p className="text-gray-600 mb-8">The page you are looking for doesn't exist or has been moved.</p>
-                    <a href="/" className="px-6 py-2 bg-primary text-white rounded-lg shadow hover:bg-primary-dark transition-colors">
-                      Return to Homepage
-                    </a>
-                  </div>
-                } />
-              </Routes>
-              <Toaster />
-            </AnnouncementsProvider>
+            <DeviceProvider>
+              <AnnouncementsProvider>
+                <AppRoutes />
+                <Toaster />
+              </AnnouncementsProvider>
+            </DeviceProvider>
           </AuthProvider>
         </LoaderProvider>
       </ThemeProvider>
