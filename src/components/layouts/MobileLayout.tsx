@@ -1,22 +1,31 @@
 import React, { ReactNode } from 'react';
 import { MobileNavigation } from '../MobileNavigation';
 import { User } from '@/contexts/auth-context';
-import { MobileNavProvider } from '@/contexts/mobile-nav-context';
+import { MobileNavProvider, useMobileNav } from '@/contexts/mobile-nav-context';
 
 interface MobileLayoutProps {
   children: ReactNode;
   user: User;
 }
 
+const MobileLayoutContent: React.FC<MobileLayoutProps> = ({ children, user }) => {
+  const { isNavOpen } = useMobileNav();
+
+  return (
+    <div className={`mobile-layout ${isNavOpen ? 'nav-open' : ''}`}>
+      <MobileNavigation />
+      <div className="mobile-main-content">
+        {/* We can add a mobile-specific header here if needed */}
+        <main>{children}</main>
+      </div>
+    </div>
+  );
+};
+
 export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, user }) => {
   return (
     <MobileNavProvider>
-      <div className="min-h-screen bg-background">
-        <main className="main-content">{children}</main>
-        <div className="mobile-navigation">
-          <MobileNavigation />
-        </div>
-      </div>
+      <MobileLayoutContent user={user}>{children}</MobileLayoutContent>
     </MobileNavProvider>
   );
 }; 

@@ -1,17 +1,17 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface MobileNavContextType {
-  isDrawerOpen: boolean;
-  setIsDrawerOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isNavOpen: boolean;
+  setIsNavOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const MobileNavContext = createContext<MobileNavContextType | undefined>(undefined);
 
 export const MobileNavProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isNavOpen, setIsNavOpen] = useState(false);
 
   return (
-    <MobileNavContext.Provider value={{ isDrawerOpen, setIsDrawerOpen }}>
+    <MobileNavContext.Provider value={{ isNavOpen, setIsNavOpen }}>
       {children}
     </MobileNavContext.Provider>
   );

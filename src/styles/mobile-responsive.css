@@ -1002,4 +1002,46 @@
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
   }
+}
+
+/* New Mobile Sidebar Styles */
+.mobile-layout {
+  position: relative;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.mobile-navigation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px; /* Sidebar width */
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+  z-index: 1000;
+  background-color: white; /* Or your desired sidebar background */
+}
+
+.mobile-main-content {
+  transition: transform 0.3s ease-in-out;
+  width: 100%;
+}
+
+.mobile-layout.nav-open .mobile-navigation {
+  transform: translateX(0);
+}
+
+.mobile-layout.nav-open .mobile-main-content {
+  transform: translateX(280px);
+}
+
+/* Add a hamburger menu button style if one doesn't exist */
+.mobile-header-toggle {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1001; /* Make sure it's above the sidebar */
+  cursor: pointer;
+  /* Add your hamburger icon styles here */
 } 
