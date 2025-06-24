@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react"
-import { useAuth } from "@/contexts/auth-context"
+import { useState, useEffect, useMemo, useCallback } from "react"
+import { useAuth, User } from "@/contexts/auth-context"
 
 // Original components
 import { EmployeeDetails } from "@/components/employees/EmployeeDetails"
@@ -14,62 +14,57 @@ import { ModernAddButton } from "@/components/employees/ModernAddButton"
 import { ModernEmployeeCard } from "@/components/employees/ModernEmployeeCard"
 import { initializeEmployeesPage } from "@/lib/employee-utils"
 import { PageHeader } from "@/components/ui/PageHeader"
+import { usePermissions } from "@/hooks/use-permissions.tsx"
 
 // Import the styles
 import "@/styles/modern-employees.css"
 
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
 const Employees = () => {
-  const { user, users, canUserManage, deactivateUser } = useAuth()
+  const { user, users, deactivateUser } = useAuth()
+  const { canViewEmployee, canEditEmployee } = usePermissions(user);
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
-  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null)
+  const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null)
+  const [isEmployeeDetailsOpen, setIsEmployeeDetailsOpen] = useState(false);
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
   const [showAddEmployeeDialog, setShowAddEmployeeDialog] = useState(false)
   const [showAssignmentDialog, setShowAssignmentDialog] = useState(false)
-  // Add a ref to track if dialog should be shown
-  const employeeDetailsVisible = useRef(false)
   
-  // Initialize the modern employees page
   useEffect(() => {
     const cleanup = initializeEmployeesPage();
     return cleanup;
   }, []);
-  
-  // Ensure selection persists
-  useEffect(() => {
-    if (selectedEmployee) {
-      employeeDetailsVisible.current = true;
+
+  const handleEmployeeClick = (employee: User) => {
+    if (canViewEmployee(employee)) {
+      setSelectedEmployee(employee);
+      setIsEmployeeDetailsOpen(true);
     }
-  }, [selectedEmployee]);
+  };
+
+  const debouncedHandleEmployeeClick = useMemo(
+    () => debounce(handleEmployeeClick, 300),
+    [canViewEmployee]
+  );
   
-  // Safe close handler that properly updates the state
   const handleCloseEmployeeDetails = () => {
-    employeeDetailsVisible.current = false;
-    setSelectedEmployee(null);
+    setIsEmployeeDetailsOpen(false);
+    setTimeout(() => setSelectedEmployee(null), 300);
   };
   
-  // Check user roles for permissions
-  const isOwnerOrHeadManager = user?.role === "owner" || user?.role === "head_manager"
-  const isManager = user?.role === "manager"
-  const isSupervisor = user?.role === "supervisor"
-  
-  // Filter visible employees based on user role hierarchy and role filters
   const visibleEmployees = users
+    .filter(employee => employee.id !== user?.id && canViewEmployee(employee))
     .filter(employee => {
-      if (employee.id === user?.id) return false
-      
-      // Owner and Head Manager can see everyone
-      if (isOwnerOrHeadManager) return true
-      
-      // Manager can see supervisors and staff
-      if (isManager && (employee.role === "supervisor" || employee.role === "staff")) return true
-      
-      // Supervisor can only see other supervisors and staff (no management)
-      if (isSupervisor && (employee.role === "supervisor" || employee.role === "staff")) return true
-      
-      return false
-    })
-    .filter(employee => {
-      // Filter by selected role
       return !selectedRole || employee.role === selectedRole
     })
   
@@ -81,33 +76,7 @@ const Employees = () => {
     }
   }
 
-  // Check if user can assign staff to supervisor
-  const canAssignEmployee = (employee: any) => {
-    // Owner and Head Manager can assign anyone
-    if (isOwnerOrHeadManager) return true;
-    
-    // Manager can assign supervisors to themselves or staff to supervisors
-    if (isManager) {
-      if (employee.role === "supervisor") return true;
-      if (employee.role === "staff") return true;
-    }
-    
-    return false;
-  }
-
-  // Check if user can add employees
-  const canAddEmployee = isOwnerOrHeadManager || isManager;
-  
-  // Check if user can deactivate employees
-  const canDeactivateEmployee = (employee: any) => {
-    // Owner and Head Manager can deactivate anyone
-    if (isOwnerOrHeadManager) return true;
-    
-    // Manager can deactivate supervisors and staff
-    if (isManager && (employee.role === "supervisor" || employee.role === "staff")) return true;
-    
-    return false;
-  }
+  const canAddEmployee = user && (user.role === "owner" || user.role === "head_manager" || user.role === "manager");
 
   return (
     <>
@@ -121,7 +90,7 @@ const Employees = () => {
         <ModernEmployeeFilters
           selectedRole={selectedRole}
           onRoleChange={setSelectedRole}
-          showManagerFilter={isOwnerOrHeadManager}
+          showManagerFilter={user?.role === "owner" || user?.role === "head_manager"}
           userRole={user?.role}
         />
         
@@ -135,7 +104,7 @@ const Employees = () => {
               <ModernEmployeeCard
                 key={employee.id}
                 employee={employee}
-                onClick={() => setSelectedEmployee(employee)}
+                onClick={() => debouncedHandleEmployeeClick(employee)}
               />
             ))
           )}
@@ -149,11 +118,11 @@ const Employees = () => {
       {selectedEmployee && (
         <EmployeeDetails
           employee={selectedEmployee}
-          isOpen={!!selectedEmployee && employeeDetailsVisible.current}
+          isOpen={isEmployeeDetailsOpen}
           onClose={handleCloseEmployeeDetails}
           onDeactivate={() => setShowDeactivateDialog(true)}
-          showDeactivateOption={canDeactivateEmployee(selectedEmployee)}
-          showAssignOption={canAssignEmployee(selectedEmployee)}
+          showDeactivateOption={canEditEmployee(selectedEmployee)}
+          showAssignOption={canEditEmployee(selectedEmployee)}
           onAssign={() => setShowAssignmentDialog(true)}
         />
       )}

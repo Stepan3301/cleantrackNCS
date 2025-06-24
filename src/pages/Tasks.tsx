@@ -1,5 +1,4 @@
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
@@ -12,86 +11,39 @@ import {
   Filter
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
-
-// Sample task data
-const mockTasks = [
-  { 
-    id: 1, 
-    title: "Dubai Marina Residence", 
-    description: "Regular cleaning service for apartment 1204",
-    date: "2025-04-17", 
-    time: "09:00 - 12:00",
-    location: "Dubai Marina, Building 7, Apt 1204",
-    assigned: ["4", "8"],  // Staff IDs
-    supervisor: "3",       // Supervisor ID
-    status: "scheduled"
-  },
-  { 
-    id: 2, 
-    title: "Business Bay Office", 
-    description: "Weekly office cleaning including carpets and kitchen area",
-    date: "2025-04-16", 
-    time: "18:00 - 22:00",
-    location: "Business Bay, Aspect Tower, Floor 12",
-    assigned: ["2", "5"],
-    supervisor: "3", 
-    status: "scheduled"
-  },
-  { 
-    id: 3, 
-    title: "JBR Apartment Complex", 
-    description: "Deep cleaning service for new tenant move-in",
-    date: "2025-04-15", 
-    time: "14:00 - 20:00",
-    location: "Jumeirah Beach Residence, Sadaf 6, Apt 1102",
-    assigned: ["4"], 
-    supervisor: "3",
-    status: "in-progress"
-  },
-  { 
-    id: 4, 
-    title: "Palm Jumeirah Villa", 
-    description: "Monthly maintenance cleaning including pool area",
-    date: "2025-04-14", 
-    time: "09:00 - 17:00",
-    location: "Palm Jumeirah, Frond D, Villa 24",
-    assigned: ["2", "4", "5"],
-    supervisor: "3", 
-    status: "completed"
-  },
-  { 
-    id: 5, 
-    title: "Downtown Apartment", 
-    description: "Post-construction cleaning service",
-    date: "2025-04-13", 
-    time: "10:00 - 18:00",
-    location: "Downtown Dubai, Burj Residence, Apt 2203",
-    assigned: ["8"],
-    supervisor: "3", 
-    status: "completed"
-  },
-]
+import { useDevice } from "@/contexts/device-context"
+import { MobileTaskCard } from "@/components/mobile/MobileTaskCard"
+import { tasksService } from "@/lib/services/tasks-service"
+import { Task } from "@/types/database.types"
 
 const Tasks = () => {
-  const { user, users } = useAuth()
+  const { user } = useAuth()
+  const { isMobile } = useDevice()
+  const [tasks, setTasks] = useState<Task[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      if (!user) return;
+      let fetchedTasks: Task[] = [];
+      if (user.role === 'staff') {
+        fetchedTasks = await tasksService.getTasksForStaff(user.id);
+      } else if (user.role === 'supervisor') {
+        fetchedTasks = await tasksService.getTasksForSupervisor(user.id);
+      } else {
+        fetchedTasks = await tasksService.getAllTasks();
+      }
+      setTasks(fetchedTasks);
+    };
+
+    fetchTasks();
+  }, [user]);
+
   
   // Determine which tasks to show based on user role
   const getVisibleTasks = () => {
-    let filteredTasks = [...mockTasks]
-    
-    // Filter by user role
-    if (user?.role === "supervisor") {
-      // Supervisors see tasks assigned to them
-      filteredTasks = filteredTasks.filter(task => task.supervisor === user.id)
-    } else if (user?.role === "staff") {
-      // Staff see tasks they are assigned to
-      filteredTasks = filteredTasks.filter(task => 
-        task.assigned.includes(user.id)
-      )
-    }
-    // Managers, head managers and owners see all tasks
+    let filteredTasks = [...tasks]
     
     // Apply search filter
     if (searchQuery) {
@@ -112,39 +64,37 @@ const Tasks = () => {
     return filteredTasks
   }
   
-  // Format date to readable string
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-  }
+  const handleTaskClick = (task: Task) => {
+    // Navigate to task details page or open a modal
+    console.log("Task clicked:", task);
+  };
   
-  // Check if task is today
-  const isToday = (dateString: string) => {
-    const today = new Date()
-    const taskDate = new Date(dateString)
+  const visibleTasks = getVisibleTasks()
+
+  if (isMobile) {
     return (
-      today.getDate() === taskDate.getDate() &&
-      today.getMonth() === taskDate.getMonth() &&
-      today.getFullYear() === taskDate.getFullYear()
-    )
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold">Tasks</h1>
+        {/* Filters can be simplified for mobile */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input 
+            placeholder="Search tasks..." 
+            className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="space-y-3">
+          {visibleTasks.map(task => (
+            <MobileTaskCard key={task.id} task={task} onTaskClick={handleTaskClick} />
+          ))}
+        </div>
+      </div>
+    );
   }
   
-  // Get staff names from IDs
-  const getStaffNames = (staffIds: string[]) => {
-    return staffIds.map(id => {
-      const staff = users.find(user => user.id === id)
-      return staff ? staff.name : "Unknown"
-    }).join(", ")
-  }
-  
-  // Get supervisor name
-  const getSupervisorName = (supervisorId: string) => {
-    const supervisor = users.find(user => user.id === supervisorId)
-    return supervisor ? supervisor.name : "Not assigned"
-  }
-  
-  const tasks = getVisibleTasks()
-  
+  // Keep original desktop layout
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -207,23 +157,18 @@ const Tasks = () => {
       
       {/* Tasks List */}
       <div className="space-y-4">
-        {tasks.map(task => (
+        {visibleTasks.map(task => (
           <div key={task.id} className="bg-white rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow">
             <div className="flex flex-wrap md:flex-nowrap">
               {/* Date column */}
-              <div className={`w-full md:w-24 p-4 md:p-6 flex items-center justify-center md:border-r border-border ${
-                isToday(task.date) ? "bg-primary/10" : "bg-secondary/20"
-              }`}>
+              <div className={`w-full md:w-24 p-4 md:p-6 flex items-center justify-center md:border-r border-border`}>
                 <div className="text-center">
                   <div className="text-sm text-muted-foreground">
-                    {formatDate(task.date)}
+                    {new Date(task.date).toLocaleDateString()}
                   </div>
                   <div className="text-lg font-medium mt-1">
-                    {task.time.split(' - ')[0]}
+                    {task.time_start}
                   </div>
-                  {isToday(task.date) && (
-                    <span className="inline-block px-2 py-0.5 bg-primary/20 text-primary text-xs rounded-full mt-2">Today</span>
-                  )}
                 </div>
               </div>
               
@@ -233,15 +178,8 @@ const Tasks = () => {
                   <div className="w-full md:max-w-md">
                     <h3 className="text-lg font-medium">
                       {task.title}
-                      <span className={`ml-2 inline-block px-2 py-0.5 text-xs rounded-full ${
-                        task.status === "completed" 
-                          ? "bg-success/20 text-success" 
-                          : task.status === "in-progress"
-                          ? "bg-warning/20 text-warning"
-                          : "bg-muted text-muted-foreground"
-                      }`}>
-                        {task.status === "scheduled" ? "Scheduled" : 
-                         task.status === "in-progress" ? "In Progress" : "Completed"}
+                      <span className={`ml-2 inline-block px-2 py-0.5 text-xs rounded-full`}>
+                        {task.status}
                       </span>
                     </h3>
                     <p className="text-muted-foreground text-sm mt-1">
@@ -251,7 +189,7 @@ const Tasks = () => {
                     <div className="flex flex-wrap gap-y-2 gap-x-4 mt-3">
                       <div className="flex items-center text-sm">
                         <Clock size={14} className="mr-1 text-muted-foreground" />
-                        <span>{task.time}</span>
+                        <span>{task.time_start} - {task.time_end}</span>
                       </div>
                       <div className="flex items-center text-sm">
                         <MapPin size={14} className="mr-1 text-muted-foreground" />
@@ -264,11 +202,11 @@ const Tasks = () => {
                     <div className="text-sm text-muted-foreground mb-1">Supervisor</div>
                     <div className="flex items-center">
                       <User size={14} className="mr-1" />
-                      <span>{getSupervisorName(task.supervisor)}</span>
+                      <span>{task.supervisor_id}</span>
                     </div>
                     
                     <div className="text-sm text-muted-foreground mt-3 mb-1">Staff Assigned</div>
-                    <div>{getStaffNames(task.assigned)}</div>
+                    <div>{task.assigned_staff.join(', ')}</div>
                   </div>
                 </div>
               </div>
@@ -283,9 +221,7 @@ const Tasks = () => {
                     </div>
                   ) : (
                     <div className="text-sm">
-                      {task.status === "in-progress" 
-                        ? "Started " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-                        : "Starts " + task.time.split(" - ")[0]}
+                      {task.status}
                     </div>
                   )}
                 </div>

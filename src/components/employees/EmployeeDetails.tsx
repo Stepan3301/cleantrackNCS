@@ -44,15 +44,15 @@ interface EmployeeDetailsProps {
   onAssign?: () => void
 }
 
-export function EmployeeDetails({ 
-  employee, 
-  isOpen, 
+export const EmployeeDetails: React.FC<EmployeeDetailsProps> = ({
+  employee,
+  isOpen,
   onClose,
   onDeactivate,
   showDeactivateOption,
   showAssignOption,
   onAssign
-}: EmployeeDetailsProps) {
+}) => {
   const { user, users } = useAuth();
   const [showHoursView, setShowHoursView] = useState(false);
   const [workTimeRecords, setWorkTimeRecords] = useState<any[]>([]);
@@ -63,16 +63,6 @@ export function EmployeeDetails({
   // Check if current user is a supervisor
   const isSupervisor = user?.role === "supervisor";
   
-  // Custom close handler that prevents accidental closing
-  const handleOpenChange = (open: boolean) => {
-    // Only allow explicit closing through our buttons
-    if (!open) {
-      // Don't auto-close the dialog, only close when we explicitly call onClose
-      // This prevents the dialog from disappearing when clicking outside
-      return false;
-    }
-  };
-
   // Get assigned supervisor/manager
   const getAssignedTo = () => {
     if (employee.role === "staff" && employee.supervisor_id) {
@@ -158,14 +148,11 @@ export function EmployeeDetails({
   // For supervisors, create a simplified version with just essential information
   if (isSupervisor && employee) {
     return (
-      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogPortal>
           <DialogOverlay className="supervisor-dialog-overlay" />
           <CustomDialogContent 
             className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto modern-dialog supervisor-dialog supervisor-specific-dialog"
-            onEscapeKeyDown={(e) => e.preventDefault()} // Prevent escape key from closing
-            onPointerDownOutside={(e) => e.preventDefault()} // Prevent outside clicks from closing
-            onInteractOutside={(e) => e.preventDefault()} // Prevent any interaction outside from closing
           >
             <div className="modern-employee-profile">
               <div className="modern-employee-profile-header p-4">
@@ -226,12 +213,9 @@ export function EmployeeDetails({
 
   // Regular dialog for other roles
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
         className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto modern-dialog"
-        onEscapeKeyDown={(e) => e.preventDefault()} // Prevent escape key from closing
-        onPointerDownOutside={(e) => e.preventDefault()} // Prevent outside clicks from closing
-        onInteractOutside={(e) => e.preventDefault()} // Prevent any interaction outside from closing
       >
         {employee && (
           <div className="modern-employee-profile">

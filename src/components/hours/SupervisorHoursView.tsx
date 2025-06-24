@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { User } from "@/contexts/auth-context";
 import { WorkTimeRecord } from "@/lib/services/work-time-service";
-import { format } from "date-fns";
+import { dateUtils } from "@/lib/utils/date";
 import ModernCalendar from "@/components/ui/modern-calendar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -79,13 +79,7 @@ export const SupervisorHoursView = ({
   // Handle date selection
   const handleDateSelect = (date: Date) => {
     // Only allow selection of current day
-    const today = new Date();
-    const isToday = 
-      date.getDate() === today.getDate() && 
-      date.getMonth() === today.getMonth() && 
-      date.getFullYear() === today.getFullYear();
-    
-    if (isToday) {
+    if (dateUtils.isSameDay(date, new Date())) {
       setSelectedDate(date);
     }
   };
@@ -93,11 +87,7 @@ export const SupervisorHoursView = ({
   // Get today's records for the selected staff member
   const todayRecords = workTimeRecords.filter(record => {
     if (record.user_id !== selectedStaffId) return false;
-    const recordDate = new Date(record.date);
-    const today = new Date();
-    return recordDate.getDate() === today.getDate() &&
-           recordDate.getMonth() === today.getMonth() &&
-           recordDate.getFullYear() === today.getFullYear();
+    return dateUtils.isSameDay(record.date, new Date());
   });
 
   const totalHoursToday = todayRecords.reduce((total, record) => total + record.hours_worked, 0);
@@ -244,7 +234,7 @@ export const SupervisorHoursView = ({
                     <div key={index} className="text-sm">
                       <div className="font-medium">{record.location}</div>
                       <div className="text-muted-foreground">
-                        {record.hours_worked} hours - {format(new Date(record.created_at), 'h:mm a')}
+                        {record.hours_worked} hours - {new Date(record.created_at).toLocaleTimeString()}
                       </div>
                       {record.description && (
                         <div className="text-muted-foreground mt-1">{record.description}</div>
