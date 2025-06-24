@@ -1,24 +1,33 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface DeviceContextType {
-  isMobile: boolean;
-}
+const DeviceContext = createContext<{ isMobile: boolean }>({ isMobile: false });
 
-const DeviceContext = createContext<DeviceContextType | undefined>(undefined);
+export const useDevice = () => useContext(DeviceContext);
 
-export const DeviceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const DeviceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const checkDevice = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    setIsMobile(mediaQuery.matches);
 
-    checkDevice();
-    window.addEventListener('resize', checkDevice);
+    const handler = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+    
+    // Add the event listener in a way that is compatible with older browsers
+    try {
+      mediaQuery.addEventListener('change', handler);
+    } catch (e) {
+      // Fallback for older browsers
+      mediaQuery.addListener(handler);
+    }
 
     return () => {
-      window.removeEventListener('resize', checkDevice);
+      try {
+        mediaQuery.removeEventListener('change', handler);
+      } catch (e) {
+        // Fallback for older browsers
+        mediaQuery.removeListener(handler);
+      }
     };
   }, []);
 
@@ -27,12 +36,4 @@ export const DeviceProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       {children}
     </DeviceContext.Provider>
   );
-};
-
-export const useDevice = () => {
-  const context = useContext(DeviceContext);
-  if (context === undefined) {
-    throw new Error('useDevice must be used within a DeviceProvider');
-  }
-  return context;
 }; 
