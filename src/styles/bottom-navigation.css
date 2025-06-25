@@ -1,199 +1,243 @@
 /*
 ==============================================
-  BOTTOM NAVIGATION STYLES (v2 - Professional)
+  PROFESSIONAL BOTTOM NAVIGATION - v3
 ==============================================
 */
 
 :root {
-  --bottom-nav-height: 65px;
+  --bottom-nav-height: 70px;
   --primary-color: #3ec6e0;
-  --text-color: #0a3d62;
-  --text-muted: #8899a6;
-  --background-white: rgba(255, 255, 255, 0.85); /* Semi-transparent for blur effect */
-  --border-color: #e5e7eb;
-  --shadow-strong: 0 -4px 20px rgba(0, 0, 0, 0.08);
-  --border-radius: 12px;
-  --transition-smooth: 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  --primary-gradient: linear-gradient(135deg, #3ec6e0 0%, #7fffd4 100%);
+  --text-active: #3ec6e0;
+  --text-inactive: #94a3b8;
+  --nav-background: #ffffff;
+  --nav-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1);
+  --border-color: rgba(148, 163, 184, 0.2);
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 
-  Ensuring the main layout wrapper does not interfere
-  with the fixed positioning of the navigation bar.
-*/
-body #root .min-h-screen {
-  position: static;
-}
-
-/*
-  High-specificity selector to guarantee the navigation
-  bar is always fixed to the bottom of the viewport.
-*/
-body .bottom-navigation {
-  position: fixed !important; /* Use !important as a final guarantee */
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: var(--bottom-nav-height);
-  background: var(--background-white);
-  border-top: 1px solid var(--border-color);
-  box-shadow: var(--shadow-strong);
-  z-index: 1000;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  will-change: transform;
+/* Force bottom positioning with maximum specificity */
+html body div#root .bottom-navigation,
+html body .bottom-navigation {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: var(--bottom-nav-height) !important;
+  background: var(--nav-background) !important;
+  border-top: 1px solid var(--border-color) !important;
+  box-shadow: var(--nav-shadow) !important;
+  z-index: 9999 !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .bottom-nav-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  height: 100%;
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 0 8px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  height: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
 }
 
-/* ===== NAVIGATION ITEMS ===== */
+/* Navigation items - equal distribution */
 .bottom-nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex-grow: 1;
-  height: 100%;
-  padding: 4px 0;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all var(--transition-smooth);
-  position: relative;
-  color: var(--text-muted);
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 1 !important; /* This ensures equal distribution */
+  height: 100% !important;
+  padding: 8px 4px 6px 4px !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: var(--transition) !important;
+  color: var(--text-inactive) !important;
+  text-decoration: none !important;
+  user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  position: relative !important;
+  min-width: 0 !important; /* Prevent flex item from growing beyond container */
 }
 
+/* Hover effects */
 .bottom-nav-item:hover {
-  color: var(--primary-color);
+  color: var(--text-active) !important;
+  transform: translateY(-1px) !important;
 }
 
+/* Active state */
 .bottom-nav-item.active {
-  color: var(--primary-color);
-  font-weight: 600;
+  color: var(--text-active) !important;
 }
 
-/* Active indicator: a clean, modern dot */
-.bottom-nav-item.active .bottom-nav-label::after {
-  content: '';
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 5px;
-  height: 5px;
-  background-color: var(--primary-color);
-  border-radius: 50%;
-  animation: pop-in 0.2s ease-out;
+/* Active indicator - top border */
+.bottom-nav-item.active::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 20% !important;
+  right: 20% !important;
+  height: 3px !important;
+  background: var(--primary-gradient) !important;
+  border-radius: 0 0 3px 3px !important;
+  animation: slideDown 0.3s ease-out !important;
 }
 
-@keyframes pop-in {
+@keyframes slideDown {
   from {
-    transform: translateX(-50%) scale(0);
+    transform: scaleX(0);
     opacity: 0;
   }
   to {
-    transform: translateX(-50%) scale(1);
+    transform: scaleX(1);
     opacity: 1;
   }
 }
 
-/* ===== NAVIGATION ICONS & LABELS ===== */
+/* Icon styling */
 .bottom-nav-icon {
-  margin-bottom: 4px;
-  transition: transform var(--transition-smooth);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  margin-bottom: 4px !important;
+  transition: var(--transition) !important;
 }
 
 .bottom-nav-item:hover .bottom-nav-icon {
-  transform: translateY(-2px);
+  transform: scale(1.1) !important;
 }
 
 .bottom-nav-item.active .bottom-nav-icon {
-  transform: scale(1.1) translateY(-1px);
+  transform: scale(1.15) !important;
+  filter: drop-shadow(0 2px 8px rgba(62, 198, 224, 0.3)) !important;
 }
 
+/* Label styling */
 .bottom-nav-label {
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+  transition: var(--transition) !important;
 }
 
-/* ===== MAIN CONTENT PADDING ===== */
-/* This ensures content isn't hidden by the nav bar */
-body .main-content {
-  padding-bottom: calc(var(--bottom-nav-height) + 16px) !important;
+.bottom-nav-item.active .bottom-nav-label {
+  font-weight: 600 !important;
+  color: var(--text-active) !important;
 }
 
-/* ===== HIDE DESKTOP SIDEBAR ON MOBILE ===== */
+/* Main content spacing - ensure content doesn't get hidden */
+body .main-content,
+body main,
+.main-content {
+  padding-bottom: calc(var(--bottom-nav-height) + 20px) !important;
+  min-height: calc(100vh - var(--bottom-nav-height)) !important;
+}
+
+/* Hide desktop navigation on mobile */
 @media (max-width: 768px) {
+  .sidebar,
   .sidebar-nav,
-  .desktop-sidebar {
+  .desktop-sidebar,
+  .app-sidebar {
     display: none !important;
   }
 }
 
-/* ===== iOS SAFE AREA SUPPORT ===== */
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .bottom-nav-label {
+    font-size: 10px !important;
+  }
+  
+  .bottom-nav-icon {
+    width: 22px !important;
+    height: 22px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  :root {
+    --bottom-nav-height: 65px;
+  }
+  
+  .bottom-nav-label {
+    font-size: 9px !important;
+  }
+  
+  .bottom-nav-item {
+    padding: 6px 2px 4px 2px !important;
+  }
+}
+
+/* iOS safe area support */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .bottom-navigation {
-    padding-bottom: env(safe-area-inset-bottom);
-    height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+  html body div#root .bottom-navigation,
+  html body .bottom-navigation {
+    height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom)) !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
   }
 
-  body .main-content {
-    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 16px) !important;
+  body .main-content,
+  body main,
+  .main-content {
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 20px) !important;
   }
 }
 
-/* ===== ACCESSIBILITY ===== */
-.bottom-nav-item:focus {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 2px;
-}
-
-.bottom-nav-item:focus:not(:focus-visible) {
-  outline: none;
-}
-
-/* ===== DARK MODE SUPPORT (OPTIONAL) ===== */
+/* Dark mode support */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background-white: #1f2937;
-    --text-muted: #9ca3af;
-    --border-color: #374151;
-    --shadow-strong: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    --nav-background: rgba(17, 24, 39, 0.95);
+    --text-inactive: #9ca3af;
+    --border-color: rgba(75, 85, 99, 0.3);
+    --nav-shadow: 0 -2px 16px rgba(0, 0, 0, 0.3);
   }
 }
 
-/* ===== ROLE-SPECIFIC STYLING ===== */
-.bottom-navigation[data-role="staff"] .bottom-nav-item:nth-child(3) {
-  display: none; /* Hide Team for staff */
-}
-
-/* ===== PERFORMANCE OPTIMIZATIONS ===== */
+/* Performance optimizations */
 .bottom-navigation {
-  will-change: transform;
-  contain: layout style paint;
+  will-change: transform !important;
+  contain: layout style paint !important;
 }
 
 .bottom-nav-item {
-  will-change: transform, background-color;
+  will-change: transform, color !important;
 }
 
-/* ===== PRINT STYLES ===== */
+/* Accessibility */
+.bottom-nav-item:focus {
+  outline: 2px solid var(--primary-color) !important;
+  outline-offset: -2px !important;
+}
+
+.bottom-nav-item:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+/* Print styles */
 @media print {
   .bottom-navigation {
-    display: none;
+    display: none !important;
   }
   
+  body .main-content,
+  body main,
   .main-content {
-    padding-bottom: 0;
+    padding-bottom: 0 !important;
   }
 } 
