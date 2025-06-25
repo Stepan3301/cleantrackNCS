@@ -67,6 +67,14 @@ html body .bottom-navigation {
   min-width: 0 !important; /* Prevent flex item from growing beyond container */
 }
 
+/* Disabled state for loading */
+.bottom-nav-item:disabled,
+.bottom-navigation[data-role="loading"] .bottom-nav-item {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
 /* Hover effects */
 .bottom-nav-item:hover {
   color: var(--text-active) !important;

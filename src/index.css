@@ -1,9 +1,9 @@
+@import url('./styles/mobile-responsive.css');
+@import url('./styles/bottom-navigation.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('./styles/mobile-responsive.css');
-@import url('./styles/bottom-navigation.css');
 
 @layer base {
   :root {

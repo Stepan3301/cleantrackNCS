@@ -21,7 +21,39 @@ export function BottomNavigation() {
   const location = useLocation();
   const { user } = useAuth();
   
-  if (!user) return null;
+  // If no user, show inactive navigation panel
+  if (!user) {
+    return (
+      <div className="bottom-navigation" data-role="loading">
+        <div className="bottom-nav-container">
+          <button className="bottom-nav-item" disabled>
+            <div className="bottom-nav-icon">
+              <LayoutDashboard size={20} />
+            </div>
+            <span className="bottom-nav-label">Dashboard</span>
+          </button>
+          <button className="bottom-nav-item" disabled>
+            <div className="bottom-nav-icon">
+              <CalendarDays size={20} />
+            </div>
+            <span className="bottom-nav-label">Hours</span>
+          </button>
+          <button className="bottom-nav-item" disabled>
+            <div className="bottom-nav-icon">
+              <PalmtreeIcon size={20} />
+            </div>
+            <span className="bottom-nav-label">Leave</span>
+          </button>
+          <button className="bottom-nav-item" disabled>
+            <div className="bottom-nav-icon">
+              <Settings size={20} />
+            </div>
+            <span className="bottom-nav-label">Settings</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   const allRoles = ["owner", "head_manager", "manager", "supervisor", "staff"];
   const managerRoles = ["owner", "head_manager", "manager", "supervisor"];
