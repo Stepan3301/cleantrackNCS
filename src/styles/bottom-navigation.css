@@ -28,7 +28,7 @@ html body .bottom-navigation {
   background: var(--nav-background) !important;
   border-top: 1px solid var(--border-color) !important;
   box-shadow: var(--nav-shadow) !important;
-  z-index: 9999 !important;
+  z-index: 10001 !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   margin: 0 !important;

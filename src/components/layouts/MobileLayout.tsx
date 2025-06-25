@@ -10,8 +10,8 @@ interface MobileLayoutProps {
 export const MobileLayout: React.FC<MobileLayoutProps> = ({ children, user }) => {
   return (
     <div className="min-h-screen bg-background">
-      {/* Основной контент */}
-      <main className="main-content">
+      {/* Main content with proper class name for bottom nav CSS */}
+      <main className="main-content px-4 py-6">
         {children}
       </main>
       
