@@ -17,20 +17,34 @@ import { MobileHoursForm } from "@/components/mobile/MobileHoursForm";
 // Record details component
 interface RecordDetailsProps {
   record: WorkTimeRecord;
+  onUpdateRecord?: (record: WorkTimeRecord) => void;
+  canUpdate?: boolean;
 }
 
-const RecordDetailsView: React.FC<RecordDetailsProps> = ({ record }) => {
+const RecordDetailsView: React.FC<RecordDetailsProps> = ({ record, onUpdateRecord, canUpdate = false }) => {
   return (
     <Card className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium text-primary">Record Details</h3>
-        <div className="text-sm text-muted-foreground">
-          {record.status === 'approved' ? (
-            <span className="text-green-600 font-medium">Approved</span>
-          ) : record.status === 'pending' ? (
-            <span className="text-amber-600 font-medium">Pending</span>
-          ) : (
-            <span className="text-red-600 font-medium">Rejected</span>
+        <div className="flex items-center gap-2">
+          <div className="text-sm text-muted-foreground">
+            {record.status === 'approved' ? (
+              <span className="text-green-600 font-medium">Approved</span>
+            ) : record.status === 'pending' ? (
+              <span className="text-amber-600 font-medium">Pending</span>
+            ) : (
+              <span className="text-red-600 font-medium">Rejected</span>
+            )}
+          </div>
+          {canUpdate && onUpdateRecord && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onUpdateRecord(record)}
+              className="text-xs"
+            >
+              Update Record
+            </Button>
           )}
         </div>
       </div>
@@ -93,6 +107,7 @@ interface StaffHoursViewProps {
   users: User[];
   workTimeRecords: WorkTimeRecord[];
   onHourSubmission: (date: Date, hours: number, location: string, description?: string) => Promise<void>;
+  onUpdateRecord?: (recordId: string, hours: number, location: string, description?: string) => Promise<void>;
   isSubmitting: boolean;
 }
 
@@ -101,6 +116,7 @@ export const StaffHoursView = ({
   users,
   workTimeRecords,
   onHourSubmission,
+  onUpdateRecord,
   isSubmitting
 }: StaffHoursViewProps) => {
   const { isMobile } = useDevice();
@@ -112,6 +128,8 @@ export const StaffHoursView = ({
   const [completedHours, setCompletedHours] = useState<number>(0);
   const [loadingTarget, setLoadingTarget] = useState<boolean>(true);
   const [selectedRecord, setSelectedRecord] = useState<WorkTimeRecord | null>(null);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [editingRecord, setEditingRecord] = useState<WorkTimeRecord | null>(null);
 
   // When selectedDate changes, check if there's an existing record
   useEffect(() => {
@@ -206,9 +224,44 @@ export const StaffHoursView = ({
     const hoursNum = parseFloat(hours);
     if (isNaN(hoursNum)) return;
 
-    await onHourSubmission(selectedDate, hoursNum, location, description);
+    if (isEditMode && editingRecord && onUpdateRecord) {
+      // Update existing record
+      await onUpdateRecord(editingRecord.id, hoursNum, location, description);
+      setIsEditMode(false);
+      setEditingRecord(null);
+    } else {
+      // Create new record
+      await onHourSubmission(selectedDate, hoursNum, location, description);
+    }
     
     // Clear form
+    setHours("");
+    setLocation("");
+    setDescription("");
+  };
+
+  const handleUpdateRecord = (record: WorkTimeRecord) => {
+    // Check if this is today's record
+    const today = new Date();
+    const recordDate = dateUtils.parseLocalDate(record.date);
+    
+    if (!dateUtils.isSameDay(recordDate, today)) {
+      return; // Only allow updating today's records
+    }
+
+    // Set edit mode and populate form
+    setIsEditMode(true);
+    setEditingRecord(record);
+    setSelectedRecord(null); // Hide the details view
+    setSelectedDate(recordDate);
+    setHours(record.hours_worked.toString());
+    setLocation(record.location || "");
+    setDescription(record.description || "");
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setEditingRecord(null);
     setHours("");
     setLocation("");
     setDescription("");
@@ -327,11 +380,17 @@ export const StaffHoursView = ({
                   Add New Hours
                 </Button>
               </div>
-              <RecordDetailsView record={selectedRecord} />
+              <RecordDetailsView 
+                record={selectedRecord} 
+                onUpdateRecord={handleUpdateRecord}
+                canUpdate={dateUtils.isSameDay(dateUtils.parseLocalDate(selectedRecord.date), new Date())}
+              />
             </div>
           ) : (
             <div className="hours-entry-form">
-              <h2 className="text-xl font-bold text-primary mb-4">Log Your Hours</h2>
+              <h2 className="text-xl font-bold text-primary mb-4">
+                {isEditMode ? 'Update Your Hours' : 'Log Your Hours'}
+              </h2>
               <form onSubmit={handleSubmit} className="space-y-4 bg-white p-4 rounded-lg shadow-sm">
                 {/* Date Display */}
                 <div className="mb-4">
@@ -392,20 +451,32 @@ export const StaffHoursView = ({
                 </div>
 
                 {/* Submit Button */}
-                <Button 
-                  type="submit" 
-                  className="w-full mt-4"
-                  disabled={isSubmitting || !selectedDate || !hours || !location}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    'Submit Hours'
+                <div className="flex gap-2">
+                  <Button 
+                    type="submit" 
+                    className="flex-1"
+                    disabled={isSubmitting || !selectedDate || !hours || !location}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {isEditMode ? 'Updating...' : 'Submitting...'}
+                      </>
+                    ) : (
+                      isEditMode ? 'Update Hours' : 'Submit Hours'
+                    )}
+                  </Button>
+                  {isEditMode && (
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
                   )}
-                </Button>
+                </div>
               </form>
             </div>
           )}

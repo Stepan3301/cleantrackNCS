@@ -79,7 +79,7 @@ export function BottomNavigation() {
     },
     {
       name: "Leave",
-      path: "/leave/request",
+      path: "/request-leave",
       icon: <PalmtreeIcon size={20} />,
       roles: allRoles,
     },

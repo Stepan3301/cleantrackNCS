@@ -291,6 +291,60 @@ const Hours = () => {
     }
   };
 
+  // Handle record update
+  const handleUpdateRecord = async (
+    recordId: string,
+    hours: number,
+    location: string,
+    description?: string
+  ) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to update hours",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSubmittingHours(true);
+    const submissionTimeout = setTimeout(() => {
+      toast({
+        title: "Update taking longer than expected",
+        description: "Please wait while we process your update",
+      });
+    }, 3000);
+
+    try {
+      // Update the record using the work time service
+      await workTimeService.updateWorkTime(recordId, {
+        hours_worked: hours,
+        location: location,
+        description: description
+      });
+
+      clearTimeout(submissionTimeout);
+      
+      // Refresh data
+      await refreshUserHours();
+      
+      toast({
+        title: "Hours updated successfully",
+        description: `Updated ${hours} hours at ${location}`,
+      });
+    } catch (err) {
+      clearTimeout(submissionTimeout);
+      console.error("Error updating hours:", err);
+      toast({
+        title: "Failed to update hours",
+        description: err instanceof Error ? err.message : "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setSubmittingHours(false);
+    }
+  };
+
   if (!user) return null;
 
   // Role checks
@@ -437,12 +491,13 @@ const Hours = () => {
       {/* Render different views based on user role */}
       <ErrorBoundary>
         {isStaff && (
-          <ModernFullCalendarHours 
-            currentMonth={new Date()}
-            hoursData={formatHoursDataForUser(user?.id || '', userHours) || DEFAULT_HOURS_DATA}
+          <StaffHoursView 
+            user={user}
+            users={users}
             workTimeRecords={userHours || []}
-            onSubmitHours={handleHourSubmission}
-            readOnly={false}
+            onHourSubmission={handleHourSubmission}
+            onUpdateRecord={handleUpdateRecord}
+            isSubmitting={submittingHours}
           />
         )}
         
