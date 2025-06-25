@@ -36,6 +36,19 @@ body.modern-dashboard {
     width: calc(100vw - 220px);
     max-width: calc(100vw - 220px);
   }
+  
+  /* Ensure all page content has proper spacing from sidebar */
+  .main-content > *,
+  .main-content .space-y-6,
+  .main-content .space-y-4 {
+    margin-left: 0; /* Reset any conflicting margins */
+    padding-left: 0; /* Reset any conflicting padding */
+  }
+  
+  /* Specific fixes for pages that use direct containers */
+  body:not(.mobile) .main-content {
+    min-width: calc(100vw - 240px); /* Account for sidebar + padding */
+  }
 }
 
 /* Mobile adjustments - no sidebar margin needed */

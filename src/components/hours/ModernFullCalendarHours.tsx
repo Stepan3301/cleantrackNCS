@@ -10,12 +10,24 @@ import { Clock, MapPin, FileText, User, CalendarIcon } from 'lucide-react';
 // New component to display record details
 interface RecordDetailsViewProps {
   record: WorkTimeRecord;
+  onUpdateRecord?: (record: WorkTimeRecord) => void;
+  canUpdate?: boolean;
 }
 
-const RecordDetailsView: React.FC<RecordDetailsViewProps> = ({ record }) => {
+const RecordDetailsView: React.FC<RecordDetailsViewProps> = ({ record, onUpdateRecord, canUpdate = false }) => {
   return (
     <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
-      <h3 className="text-lg font-medium mb-3 text-primary">Record Details</h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-medium text-primary">Record Details</h3>
+        {canUpdate && onUpdateRecord && (
+          <button
+            onClick={() => onUpdateRecord(record)}
+            className="bg-primary text-primary-foreground px-3 py-1 rounded-md text-sm hover:bg-primary/90 transition-colors"
+          >
+            Update Record
+          </button>
+        )}
+      </div>
       
       <div className="space-y-4">
         <div className="flex items-start gap-3">
@@ -88,6 +100,12 @@ export interface ModernFullCalendarHoursProps {
     location: string,
     description: string
   ) => void;
+  onUpdateRecord?: (
+    recordId: string,
+    hours: number,
+    location: string,
+    description?: string
+  ) => Promise<void>;
   readOnly?: boolean;
 }
 
@@ -96,6 +114,7 @@ export const ModernFullCalendarHours: React.FC<ModernFullCalendarHoursProps> = (
   hoursData,
   workTimeRecords = [],
   onSubmitHours,
+  onUpdateRecord,
   readOnly = false
 }) => {
   const { toast } = useToast();
@@ -107,6 +126,8 @@ export const ModernFullCalendarHours: React.FC<ModernFullCalendarHoursProps> = (
   const [isFormInitialized, setIsFormInitialized] = useState<boolean>(false);
   const [isUserEditing, setIsUserEditing] = useState<boolean>(false);
   const [selectedRecord, setSelectedRecord] = useState<WorkTimeRecord | null>(null);
+  const [isUpdateMode, setIsUpdateMode] = useState<boolean>(false);
+  const [updateRecord, setUpdateRecord] = useState<WorkTimeRecord | null>(null);
 
   // Format hours data for ModernCalendar
   const formattedMarkedDates = React.useMemo(() => {
@@ -201,15 +222,15 @@ export const ModernFullCalendarHours: React.FC<ModernFullCalendarHoursProps> = (
     setSelectedDate(date);
   };
 
-  const handleHoursSubmit = (hours: number, locationVal: string, descriptionVal?: string) => {
+  const handleHoursSubmit = async (hours: number, locationVal: string, descriptionVal?: string) => {
     if (!selectedDate || readOnly) {
       return;
     }
 
-    // Verify that the selected date is the current day
+    // Verify that the selected date is the current day for new submissions
     const isToday = dateUtils.isSameDay(selectedDate, new Date());
 
-    if (!isToday) {
+    if (!isToday && !isUpdateMode) {
       toast({
         title: "Not Allowed",
         description: "Hours can only be submitted for the current day.",
@@ -222,14 +243,31 @@ export const ModernFullCalendarHours: React.FC<ModernFullCalendarHoursProps> = (
     setIsSubmitting(true);
 
     try {
-      onSubmitHours(
-        selectedDate,
-        hours,
-        locationVal,
-        descriptionVal || ''
-      );
+      if (isUpdateMode && updateRecord && onUpdateRecord) {
+        // Update existing record
+        await onUpdateRecord(updateRecord.id, hours, locationVal, descriptionVal);
+        toast({
+          title: "Success",
+          description: "Record updated successfully.",
+        });
+        setIsUpdateMode(false);
+        setUpdateRecord(null);
+      } else {
+        // Create new record
+        onSubmitHours(
+          selectedDate,
+          hours,
+          locationVal,
+          descriptionVal || ''
+        );
+      }
     } catch (error) {
       console.error("Error in ModernFullCalendarHours handleSubmit:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save record. Please try again.",
+        variant: "destructive",
+      });
     }
 
     // Reset form after submission
@@ -245,6 +283,36 @@ export const ModernFullCalendarHours: React.FC<ModernFullCalendarHoursProps> = (
     setDescription(value);
   };
 
+  // Handle update record
+  const handleUpdateRecord = (record: WorkTimeRecord) => {
+    // Check if this is today's record
+    const today = new Date();
+    const recordDate = dateUtils.parseLocalDate(record.date);
+    
+    if (!dateUtils.isSameDay(recordDate, today)) {
+      toast({
+        title: "Not Allowed",
+        description: "Only today's records can be updated.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsUpdateMode(true);
+    setUpdateRecord(record);
+    setHoursWorked(record.hours_worked);
+    setLocation(record.location || '');
+    setDescription(record.description || '');
+    setIsUserEditing(true);
+  };
+
+  const handleCancelUpdate = () => {
+    setIsUpdateMode(false);
+    setUpdateRecord(null);
+    setIsUserEditing(false);
+    setIsFormInitialized(false);
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="flex justify-center">
@@ -258,14 +326,31 @@ export const ModernFullCalendarHours: React.FC<ModernFullCalendarHoursProps> = (
 
       <div>
         {selectedDate ? (
-          selectedRecord ? (
-            <RecordDetailsView record={selectedRecord} />
-          ) : (
-            <HoursEntryForm
-              onSubmit={handleHoursSubmit}
-              loading={isSubmitting}
-              onDescriptionChange={handleDescriptionChange}
+          (selectedRecord && !isUpdateMode) ? (
+            <RecordDetailsView
+              record={selectedRecord}
+              onUpdateRecord={handleUpdateRecord}
+              canUpdate={dateUtils.isSameDay(dateUtils.parseLocalDate(selectedRecord.date), new Date())}
             />
+          ) : (
+            <div>
+              {isUpdateMode && (
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium text-primary mb-2">Update Record</h3>
+                  <button
+                    onClick={handleCancelUpdate}
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    ← Back to Details
+                  </button>
+                </div>
+              )}
+              <HoursEntryForm
+                onSubmit={handleHoursSubmit}
+                loading={isSubmitting}
+                onDescriptionChange={handleDescriptionChange}
+              />
+            </div>
           )
         ) : (
           <StaffDashboard />

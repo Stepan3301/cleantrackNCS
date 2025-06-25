@@ -491,13 +491,13 @@ const Hours = () => {
       {/* Render different views based on user role */}
       <ErrorBoundary>
         {isStaff && (
-          <StaffHoursView 
-            user={user}
-            users={users}
+          <ModernFullCalendarHours 
+            currentMonth={new Date()}
+            hoursData={formatHoursDataForUser(user?.id || '', userHours) || DEFAULT_HOURS_DATA}
             workTimeRecords={userHours || []}
-            onHourSubmission={handleHourSubmission}
+            onSubmitHours={handleHourSubmission}
             onUpdateRecord={handleUpdateRecord}
-            isSubmitting={submittingHours}
+            readOnly={false}
           />
         )}
         

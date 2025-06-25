@@ -28,7 +28,6 @@ const Employees = () => {
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
   const [showAddEmployeeDialog, setShowAddEmployeeDialog] = useState(false)
   const [showAssignmentDialog, setShowAssignmentDialog] = useState(false)
-  const [isDialogOpening, setIsDialogOpening] = useState(false)
   
   useEffect(() => {
     const cleanup = initializeEmployeesPage();
@@ -36,20 +35,16 @@ const Employees = () => {
   }, []);
 
   const handleEmployeeClick = (employee: User) => {
-    if (canViewEmployee(employee) && !isDialogOpening) {
-      setIsDialogOpening(true);
+    if (canViewEmployee(employee)) {
       setSelectedEmployee(employee);
       setIsEmployeeDetailsOpen(true);
-      // Reset the flag after a short delay
-      setTimeout(() => setIsDialogOpening(false), 500);
     }
   };
 
   const handleCloseEmployeeDetails = () => {
-    if (!isDialogOpening) {
-      setIsEmployeeDetailsOpen(false);
-      setTimeout(() => setSelectedEmployee(null), 300);
-    }
+    setIsEmployeeDetailsOpen(false);
+    // Clear selected employee after a small delay to allow dialog animation
+    setTimeout(() => setSelectedEmployee(null), 150);
   };
   
   const visibleEmployees = users
