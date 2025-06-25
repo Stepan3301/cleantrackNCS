@@ -212,9 +212,9 @@ export function ModernAppSidebar({ user, logout }: ModernAppSidebarProps) {
         {/* Request Leave - For staff and supervisors */}
         {showStaffContent && (
           <a 
-            href="/leave/request" 
-            className={`sidebar-link ${location.pathname === "/leave/request" ? "active" : ""}`}
-            onClick={(e) => { e.preventDefault(); handleNavigation("/leave/request"); }}
+            href="/request-leave" 
+            className={`sidebar-link ${location.pathname === "/request-leave" ? "active" : ""}`}
+            onClick={(e) => { e.preventDefault(); handleNavigation("/request-leave"); }}
           >
             <div className="sidebar-icon">
               <PalmtreeIcon size={22} />
@@ -226,9 +226,9 @@ export function ModernAppSidebar({ user, logout }: ModernAppSidebarProps) {
         {/* Manage Leave Requests - For managers and up, not supervisors */}
         {showManagerContent && (
           <a 
-            href="/leave/manage" 
-            className={`sidebar-link ${location.pathname === "/leave/manage" ? "active" : ""}`}
-            onClick={(e) => { e.preventDefault(); handleNavigation("/leave/manage"); }}
+            href="/manage-leave" 
+            className={`sidebar-link ${location.pathname === "/manage-leave" ? "active" : ""}`}
+            onClick={(e) => { e.preventDefault(); handleNavigation("/manage-leave"); }}
           >
             <div className="sidebar-icon">
               <CalendarCheck size={22} />

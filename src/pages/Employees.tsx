@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useAuth, User } from "@/contexts/auth-context"
 
 // Original components
@@ -19,17 +19,6 @@ import { usePermissions } from "@/hooks/use-permissions.tsx"
 // Import the styles
 import "@/styles/modern-employees.css"
 
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
-
 const Employees = () => {
   const { user, users, deactivateUser } = useAuth()
   const { canViewEmployee, canEditEmployee } = usePermissions(user);
@@ -39,6 +28,7 @@ const Employees = () => {
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false)
   const [showAddEmployeeDialog, setShowAddEmployeeDialog] = useState(false)
   const [showAssignmentDialog, setShowAssignmentDialog] = useState(false)
+  const [isDialogOpening, setIsDialogOpening] = useState(false)
   
   useEffect(() => {
     const cleanup = initializeEmployeesPage();
@@ -46,20 +36,20 @@ const Employees = () => {
   }, []);
 
   const handleEmployeeClick = (employee: User) => {
-    if (canViewEmployee(employee)) {
+    if (canViewEmployee(employee) && !isDialogOpening) {
+      setIsDialogOpening(true);
       setSelectedEmployee(employee);
       setIsEmployeeDetailsOpen(true);
+      // Reset the flag after a short delay
+      setTimeout(() => setIsDialogOpening(false), 500);
     }
   };
 
-  const debouncedHandleEmployeeClick = useMemo(
-    () => debounce(handleEmployeeClick, 300),
-    [canViewEmployee]
-  );
-  
   const handleCloseEmployeeDetails = () => {
-    setIsEmployeeDetailsOpen(false);
-    setTimeout(() => setSelectedEmployee(null), 300);
+    if (!isDialogOpening) {
+      setIsEmployeeDetailsOpen(false);
+      setTimeout(() => setSelectedEmployee(null), 300);
+    }
   };
   
   const visibleEmployees = users
@@ -104,7 +94,7 @@ const Employees = () => {
               <ModernEmployeeCard
                 key={employee.id}
                 employee={employee}
-                onClick={() => debouncedHandleEmployeeClick(employee)}
+                onClick={() => handleEmployeeClick(employee)}
               />
             ))
           )}

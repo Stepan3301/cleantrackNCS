@@ -18,6 +18,35 @@ body.modern-dashboard {
   padding: 40px 0;
 }
 
+/* Main content area adjustments for desktop sidebar */
+.flex.h-screen.bg-background .main-content {
+  margin-left: 0; /* Reset - flex will handle this */
+  min-height: 100vh;
+  width: auto;
+  max-width: none;
+  box-sizing: border-box;
+  overflow-x: auto;
+  padding: 24px;
+}
+
+/* When sidebar is fixed positioned, adjust main content */
+@media (min-width: 769px) {
+  .main-content {
+    margin-left: 220px; /* Account for fixed sidebar width on desktop */
+    width: calc(100vw - 220px);
+    max-width: calc(100vw - 220px);
+  }
+}
+
+/* Mobile adjustments - no sidebar margin needed */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+}
+
 .dashboard-container {
   max-width: 1200px;
   margin: 0 auto;

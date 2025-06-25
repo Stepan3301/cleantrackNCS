@@ -148,11 +148,18 @@ export const EmployeeDetails: React.FC<EmployeeDetailsProps> = ({
   // For supervisors, create a simplified version with just essential information
   if (isSupervisor && employee) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogPortal>
           <DialogOverlay className="supervisor-dialog-overlay" />
           <CustomDialogContent 
             className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto modern-dialog supervisor-dialog supervisor-specific-dialog"
+            onPointerDownOutside={(e) => {
+              // Prevent dialog from closing when clicking on interactive elements
+              const target = e.target as Element;
+              if (target?.closest('button') || target?.closest('[role="button"]')) {
+                e.preventDefault();
+              }
+            }}
           >
             <div className="modern-employee-profile">
               <div className="modern-employee-profile-header p-4">
@@ -213,9 +220,16 @@ export const EmployeeDetails: React.FC<EmployeeDetailsProps> = ({
 
   // Regular dialog for other roles
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent 
         className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto modern-dialog"
+        onPointerDownOutside={(e) => {
+          // Prevent dialog from closing when clicking on interactive elements
+          const target = e.target as Element;
+          if (target?.closest('button') || target?.closest('[role="button"]')) {
+            e.preventDefault();
+          }
+        }}
       >
         {employee && (
           <div className="modern-employee-profile">
