@@ -17,7 +17,7 @@
 .supervisor-dialog-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9998;
+  z-index: 9998; /* Below bottom navigation (10002) */
   background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 15, 40, 0.8));
   backdrop-filter: blur(3px);
   animation: fadeIn 0.2s ease forwards;
@@ -28,9 +28,9 @@
   to { opacity: 1; }
 }
 
-/* Ensure supervisor dialogs always appear on top */
+/* Ensure supervisor dialogs always appear on top but below bottom nav */
 .supervisor-specific-dialog {
-  z-index: 10000 !important;
+  z-index: 10000 !important; /* Below bottom navigation (10002) */
   position: fixed !important;
   top: 50% !important;
   left: 50% !important;
@@ -42,7 +42,7 @@
 
 /* Avoid hiding issues with shadow dom elements */
 [data-radix-popper-content-wrapper]:has(.supervisor-dialog) {
-  z-index: 10000 !important;
+  z-index: 10000 !important; /* Below bottom navigation (10002) */
   position: fixed !important;
   top: 50% !important;
   left: 50% !important;

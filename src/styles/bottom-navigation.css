@@ -1,6 +1,6 @@
 /*
 ==============================================
-  PROFESSIONAL BOTTOM NAVIGATION - v3
+  OPTIMIZED BOTTOM NAVIGATION - v4
 ==============================================
 */
 
@@ -13,10 +13,10 @@
   --nav-background: #ffffff;
   --nav-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1);
   --border-color: rgba(148, 163, 184, 0.2);
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: all 0.2s ease;
 }
 
-/* Force bottom positioning with maximum specificity */
+/* OPTIMIZED: Force bottom positioning with maximum specificity */
 html body div#root .bottom-navigation,
 html body .bottom-navigation {
   position: fixed !important;
@@ -28,11 +28,12 @@ html body .bottom-navigation {
   background: var(--nav-background) !important;
   border-top: 1px solid var(--border-color) !important;
   box-shadow: var(--nav-shadow) !important;
-  z-index: 10001 !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  z-index: 10002 !important; /* Higher than dialogs (10000) and page loader (9999) */
   margin: 0 !important;
   padding: 0 !important;
+  /* PERFORMANCE: Reduced backdrop-filter for better mobile performance */
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
 }
 
 .bottom-nav-container {
@@ -75,10 +76,9 @@ html body .bottom-navigation {
   pointer-events: none !important;
 }
 
-/* Hover effects */
+/* OPTIMIZED: Simpler hover effects for better performance */
 .bottom-nav-item:hover {
   color: var(--text-active) !important;
-  transform: translateY(-1px) !important;
 }
 
 /* Active state */
@@ -86,28 +86,16 @@ html body .bottom-navigation {
   color: var(--text-active) !important;
 }
 
-/* Active indicator - top border */
+/* OPTIMIZED: Simpler active indicator */
 .bottom-nav-item.active::before {
   content: '' !important;
   position: absolute !important;
   top: 0 !important;
-  left: 20% !important;
-  right: 20% !important;
+  left: 25% !important;
+  right: 25% !important;
   height: 3px !important;
   background: var(--primary-gradient) !important;
   border-radius: 0 0 3px 3px !important;
-  animation: slideDown 0.3s ease-out !important;
-}
-
-@keyframes slideDown {
-  from {
-    transform: scaleX(0);
-    opacity: 0;
-  }
-  to {
-    transform: scaleX(1);
-    opacity: 1;
-  }
 }
 
 /* Icon styling */
@@ -122,12 +110,11 @@ html body .bottom-navigation {
 }
 
 .bottom-nav-item:hover .bottom-nav-icon {
-  transform: scale(1.1) !important;
+  transform: scale(1.05) !important;
 }
 
 .bottom-nav-item.active .bottom-nav-icon {
-  transform: scale(1.15) !important;
-  filter: drop-shadow(0 2px 8px rgba(62, 198, 224, 0.3)) !important;
+  transform: scale(1.1) !important;
 }
 
 /* Label styling */
@@ -156,13 +143,18 @@ body main,
   min-height: calc(100vh - var(--bottom-nav-height)) !important;
 }
 
-/* Hide desktop navigation on mobile */
+/* CRITICAL: Hide ALL desktop navigation on mobile */
 @media (max-width: 768px) {
   .sidebar,
   .sidebar-nav,
   .desktop-sidebar,
-  .app-sidebar {
+  .app-sidebar,
+  .ModernAppSidebar,
+  [class*="sidebar"] {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
 }
 
@@ -217,14 +209,13 @@ body main,
   }
 }
 
-/* Performance optimizations */
+/* OPTIMIZED: Minimal performance optimizations */
 .bottom-navigation {
-  will-change: transform !important;
-  contain: layout style paint !important;
+  contain: layout style !important;
 }
 
 .bottom-nav-item {
-  will-change: transform, color !important;
+  contain: layout !important;
 }
 
 /* Accessibility */

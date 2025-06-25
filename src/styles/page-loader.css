@@ -1,7 +1,7 @@
 /* Page Loader Component Styles */
 #page-loader {
   position: fixed;
-  z-index: 9999;
+  z-index: 9999; /* Below bottom navigation (10002) */
   inset: 0;
   background: rgba(255,255,255,0.85);
   display: flex;
